@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Área do Lojista — Drogaria Munhoz</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#D8121B">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  body{ background:var(--gelo); }
+
+  .adm-topo{
+    background:var(--branco); border-bottom:1px solid var(--linha);
+    position:sticky; top:0; z-index:20;
+  }
+  .adm-topo__wrap{
+    max-width:var(--largura); margin:0 auto; padding:14px 22px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .adm-marca{ display:flex; align-items:center; gap:11px; font-weight:700; }
+  .adm-marca svg{ width:40px; height:40px; border-radius:50%; }
+  .adm-marca em{ display:block; font-style:normal; font-size:.74rem; font-family:var(--mono);
+    color:var(--tinta-fraca); letter-spacing:.04em; font-weight:400; }
+  .adm-topo__dir{ margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .adm-quem{ font-size:.8rem; color:var(--tinta-media); font-family:var(--mono); }
+
+  .adm-wrap{ max-width:var(--largura); margin:0 auto; padding:26px 22px 90px; }
+
+  /* ---------- login ---------- */
+  .login{ min-height:78vh; display:grid; place-items:center; padding:24px; }
+  .login__cartao{
+    width:min(420px,100%); background:var(--branco); border:1px solid var(--linha);
+    border-radius:var(--raio); box-shadow:var(--sombra); padding:34px 30px; text-align:center;
+  }
+  .login__selo{ width:84px; height:84px; border-radius:50%; margin:0 auto 16px; }
+  .login__cartao h1{ font-family:var(--display); font-size:1.5rem; margin:0 0 4px; }
+  .login__cartao p.sub{ margin:0 0 22px; color:var(--tinta-media); font-size:.9rem; }
+  .login__cartao form{ display:grid; gap:12px; text-align:left; }
+
+  /* ---------- formulários ---------- */
+  label.campo{ display:grid; gap:5px; font-size:.82rem; font-weight:600; color:var(--tinta-media); }
+  input, select, textarea{
+    font:inherit; font-size:.95rem; color:var(--tinta); background:var(--branco);
+    border:1px solid var(--linha); border-radius:var(--raio-sm); padding:10px 12px; width:100%;
+  }
+  input:focus-visible, select:focus-visible, textarea:focus-visible{ outline:2px solid var(--vermelho); outline-offset:1px; }
+  textarea{ min-height:88px; resize:vertical; line-height:1.5; }
+  .dica{ font-weight:400; font-size:.75rem; color:var(--tinta-fraca); }
+  .linha-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .linha-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  @media (max-width:640px){ .linha-2, .linha-3{ grid-template-columns:1fr; } }
+
+  .bt{
+    font:inherit; font-weight:600; font-size:.9rem; cursor:pointer;
+    border:1px solid var(--linha); background:var(--branco); color:var(--tinta);
+    border-radius:var(--raio-pill); padding:9px 16px; display:inline-flex;
+    align-items:center; gap:7px; justify-content:center;
+  }
+  .bt:hover{ border-color:#CFD3D9; }
+  .bt--solido{ background:var(--vermelho); border-color:var(--vermelho); color:#fff; }
+  .bt--solido:hover{ background:var(--vermelho-fundo); border-color:var(--vermelho-fundo); }
+  .bt--perigo{ color:var(--vermelho); border-color:var(--vermelho-claro); background:var(--vermelho-claro); }
+  .bt--bloco{ width:100%; }
+  .bt[disabled]{ opacity:.55; cursor:not-allowed; }
+  .bt--mini{ padding:5px 10px; font-size:.78rem; border-radius:var(--raio-sm); }
+
+  /* ---------- abas ---------- */
+  .abas{ display:flex; gap:4px; border-bottom:1px solid var(--linha); margin-bottom:22px; flex-wrap:wrap; }
+  .aba{
+    background:none; border:0; border-bottom:3px solid transparent; margin-bottom:-1px;
+    font:inherit; font-weight:700; font-size:.92rem; color:var(--tinta-fraca);
+    padding:10px 14px; cursor:pointer;
+  }
+  .aba:hover{ color:var(--tinta); }
+  .aba[aria-selected="true"]{ color:var(--vermelho); border-bottom-color:var(--vermelho); }
+
+  .barra{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+  .barra input[type="search"]{ max-width:320px; }
+
+  /* ---------- cartões e listas ---------- */
+  .painel{ background:var(--branco); border:1px solid var(--linha); border-radius:var(--raio); padding:22px; }
+  .painel + .painel{ margin-top:16px; }
+  .painel h2{ font-family:var(--display); font-size:1.15rem; margin:0 0 4px; }
+  .painel p.olho-adm{ margin:0 0 18px; color:var(--tinta-media); font-size:.85rem; }
+
+  .fila{
+    display:grid; grid-template-columns:56px 1fr auto; gap:14px; align-items:center;
+    padding:12px; border:1px solid var(--linha); border-radius:var(--raio-sm); background:var(--branco);
+  }
+  .fila + .fila{ margin-top:8px; }
+  .fila[data-inativo="true"]{ opacity:.55; }
+  .fila__fig{ width:56px; height:56px; border-radius:var(--raio-sm); background:var(--gelo);
+    display:grid; place-items:center; overflow:hidden; }
+  .fila__fig svg{ width:62%; height:62%; }
+  .fila__fig img{ width:100%; height:100%; object-fit:cover; }
+  .fila__nome{ font-weight:600; margin:0; }
+  .fila__spec{ margin:2px 0 0; font-size:.8rem; color:var(--tinta-media); }
+  .fila__meta{ margin:4px 0 0; font-family:var(--mono); font-size:.74rem; color:var(--tinta-fraca);
+    letter-spacing:.03em; text-transform:uppercase; }
+  .fila__acoes{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+
+  /* ---------- modal ---------- */
+  .fundo-adm{ position:fixed; inset:0; background:rgba(20,21,24,.45); z-index:40; }
+  .modal{
+    position:fixed; z-index:50; inset:auto 50% 0 auto; transform:translateX(50%);
+    width:min(620px,100%); max-height:92vh; overflow:auto;
+    background:var(--branco); border-radius:var(--raio) var(--raio) 0 0;
+    box-shadow:var(--sombra-lg); padding:24px;
+  }
+  @media (min-width:700px){
+    .modal{ inset:50% auto auto 50%; transform:translate(-50%,-50%); border-radius:var(--raio); }
+  }
+  .modal h2{ font-family:var(--display); font-size:1.25rem; margin:0 0 18px; }
+  .modal form{ display:grid; gap:13px; }
+  .modal__base{ display:flex; gap:10px; justify-content:flex-end; margin-top:6px; flex-wrap:wrap; }
+
+  .recado{
+    border-radius:var(--raio-sm); padding:11px 14px; font-size:.85rem; font-weight:600;
+    background:var(--vermelho-claro); color:var(--vermelho-fundo);
+    border:1px solid rgba(216,18,27,.22);
+  }
+  .recado--ok{ background:var(--verde-claro); color:var(--verde); border-color:rgba(15,122,90,.22); }
+  .recado--neutro{ background:var(--gelo); color:var(--tinta-media); border-color:var(--linha); }
+
+  .aviso-topo{ margin-bottom:18px; }
+  .vazio-adm{ text-align:center; padding:36px 20px; color:var(--tinta-media); }
+
+  .marcar{ display:flex; align-items:center; gap:9px; font-size:.9rem; font-weight:600; color:var(--tinta-media); }
+  .marcar input{ width:auto; }
+
+  /* ---------- checklist de conformidade ---------- */
+  .checa{ display:grid; gap:7px; margin-top:4px; }
+  .checa li{ display:flex; align-items:center; gap:10px; font-size:.9rem; list-style:none; }
+  .checa__marca{
+    width:20px; height:20px; border-radius:50%; flex:none;
+    display:grid; place-items:center; font-size:.72rem; font-weight:700;
+  }
+  .checa li[data-ok="true"] .checa__marca{ background:var(--verde-claro); color:var(--verde); }
+  .checa li[data-ok="true"]{ color:var(--tinta-media); }
+  .checa li[data-ok="false"] .checa__marca{ background:var(--vermelho-claro); color:var(--vermelho); }
+  .checa li[data-ok="false"]{ color:var(--tinta); font-weight:600; }
+  .checa ul{ margin:0; padding:0; }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<section class="login" id="telaLogin" hidden>
+  <div class="login__cartao">
+    <svg class="login__selo" viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="60" cy="60" r="60" fill="#D8121B"/>
+      <text x="60" y="42" text-anchor="middle" fill="#fff" font-family="Geist, sans-serif" font-size="11" letter-spacing="1.6">DROGARIA</text>
+      <text x="60" y="70" text-anchor="middle" fill="#fff" font-family="Bricolage Grotesque, sans-serif" font-size="27" font-weight="800">Munhoz</text>
+      <path d="M55 82h10v8h8v10h-8v8H55v-8h-8V90h8z" fill="#fff"/>
+    </svg>
+    <h1>Área do lojista</h1>
+    <p class="sub">Entre para editar o catálogo da farmácia.</p>
+    <form id="formLogin">
+      <div class="recado" id="erroLogin" hidden></div>
+      <label class="campo">E-mail
+        <input type="email" id="loginEmail" autocomplete="username" required>
+      </label>
+      <label class="campo">Senha
+        <input type="password" id="loginSenha" autocomplete="current-password" required>
+      </label>
+      <button class="bt bt--solido bt--bloco" type="submit" id="btEntrar">Entrar</button>
+    </form>
+    <p style="margin-top:18px"><a href="index.html" style="font-size:.85rem;color:var(--tinta-media)">← Voltar para o site</a></p>
+  </div>
+</section>
+
+<!-- ================= PAINEL ================= -->
+<div id="telaPainel" hidden>
+
+  <header class="adm-topo">
+    <div class="adm-topo__wrap">
+      <span class="adm-marca">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="60" cy="60" r="60" fill="#D8121B"/>
+          <text x="60" y="44" text-anchor="middle" fill="#fff" font-family="Geist, sans-serif" font-size="12" letter-spacing="1.2">DROGARIA</text>
+          <text x="60" y="74" text-anchor="middle" fill="#fff" font-family="Bricolage Grotesque, sans-serif" font-size="29" font-weight="800">Munhoz</text>
+        </svg>
+        <span>Área do lojista<em>Drogaria Munhoz</em></span>
+      </span>
+      <div class="adm-topo__dir">
+        <span class="adm-quem" id="quemSou"></span>
+        <a class="bt" href="index.html" target="_blank" rel="noopener">Ver o site</a>
+        <button class="bt" id="btSair" type="button">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="adm-wrap">
+    <div class="recado aviso-topo" id="avisoDono" hidden></div>
+    <div class="recado recado--ok aviso-topo" id="avisoOk" hidden></div>
+
+    <div class="abas" role="tablist">
+      <button class="aba" role="tab" data-aba="produtos"   aria-selected="true">Produtos</button>
+      <button class="aba" role="tab" data-aba="categorias" aria-selected="false">Categorias</button>
+      <button class="aba" role="tab" data-aba="servicos"   aria-selected="false">Serviços</button>
+      <button class="aba" role="tab" data-aba="loja"       aria-selected="false">Dados da loja</button>
+    </div>
+
+    <!-- ---- produtos ---- -->
+    <section data-painel="produtos">
+      <div class="barra">
+        <input type="search" id="buscaAdm" placeholder="Buscar produto…" aria-label="Buscar produto">
+        <select id="filtroCatAdm" aria-label="Filtrar por categoria" style="max-width:240px"></select>
+        <button class="bt bt--solido" id="btNovoProduto" type="button">+ Novo produto</button>
+      </div>
+      <div id="listaProdutos"></div>
+    </section>
+
+    <!-- ---- categorias ---- -->
+    <section data-painel="categorias" hidden>
+      <div class="painel">
+        <h2>Categorias</h2>
+        <p class="olho-adm">São as abas que aparecem em cima do catálogo. Renomear uma categoria também renomeia ela em todos os produtos.</p>
+        <form class="barra" id="formCategoria">
+          <input type="text" id="novaCategoria" placeholder="Nome da nova categoria" required style="max-width:320px">
+          <button class="bt bt--solido" type="submit">Adicionar</button>
+        </form>
+        <div id="listaCategorias"></div>
+      </div>
+    </section>
+
+    <!-- ---- serviços ---- -->
+    <section data-painel="servicos" hidden>
+      <div class="painel">
+        <h2>Serviços do balcão</h2>
+        <p class="olho-adm">Os quadros que aparecem na seção “Serviços do balcão” do site.</p>
+        <div class="barra">
+          <button class="bt bt--solido" id="btNovoServico" type="button">+ Novo serviço</button>
+        </div>
+        <div id="listaServicos"></div>
+      </div>
+    </section>
+
+    <!-- ---- loja ---- -->
+    <section data-painel="loja" hidden>
+      <div class="painel">
+        <h2>Dados da loja</h2>
+        <p class="olho-adm">Telefone, endereço e horário aparecem no site inteiro: mudou aqui, muda em todo lugar.</p>
+        <form id="formLoja" style="display:grid; gap:13px">
+          <div class="linha-2">
+            <label class="campo">Nome completo <input type="text" name="nome" required></label>
+            <label class="campo">Nome curto <span class="dica">usado em espaços apertados</span><input type="text" name="nome_curto"></label>
+          </div>
+          <label class="campo">Frase de apresentação <span class="dica">aparece no rodapé</span>
+            <textarea name="sobre"></textarea>
+          </label>
+          <div class="linha-2">
+            <label class="campo">WhatsApp <span class="dica">só números, com DDI + DDD: 551434431470</span>
+              <input type="text" name="whatsapp" inputmode="numeric" required>
+            </label>
+            <label class="campo">Telefone visível <span class="dica">como aparece na tela</span>
+              <input type="text" name="telefone">
+            </label>
+          </div>
+          <div class="linha-2">
+            <label class="campo">Endereço <input type="text" name="endereco"></label>
+            <label class="campo">Cidade <input type="text" name="cidade"></label>
+          </div>
+          <label class="campo">Link do mapa <input type="url" name="mapa"></label>
+          <div class="linha-3">
+            <label class="campo">Abre às <span class="dica">hora cheia, 24h</span><input type="number" name="abre" min="0" max="23"></label>
+            <label class="campo">Fecha às <span class="dica">hora cheia, 24h</span><input type="number" name="fecha" min="0" max="23"></label>
+            <label class="campo">Instagram <span class="dica">só o @, sem link</span><input type="text" name="instagram"></label>
+          </div>
+          <label class="campo">Horário escrito <span class="dica">o texto que o cliente lê</span>
+            <input type="text" name="horario">
+          </label>
+          <label class="campo">Aviso legal do catálogo
+            <textarea name="aviso"></textarea>
+          </label>
+
+          <hr style="border:0;border-top:1px solid var(--linha);margin:10px 0 4px">
+          <h2 style="font-family:var(--display);font-size:1.05rem;margin:0">Dados obrigatórios de farmácia</h2>
+          <p class="olho-adm" style="margin:0 0 6px">
+            Aparecem no rodapé do site e nos documentos. Sem eles o site não pode
+            rodar anúncio no Meta ou no Google, e fica fora das normas da ANVISA e
+            do CRF. Campo vazio some do site — nada é inventado.
+          </p>
+          <div class="linha-2">
+            <label class="campo">Razão social <input type="text" name="razao_social" placeholder="Como está no CNPJ"></label>
+            <label class="campo">CNPJ <input type="text" name="cnpj" placeholder="00.000.000/0001-00"></label>
+          </div>
+          <div class="linha-2">
+            <label class="campo">Farmacêutico(a) responsável técnico <input type="text" name="farmaceutico"></label>
+            <label class="campo">CRF <span class="dica">registro no conselho</span><input type="text" name="crf" placeholder="CRF-SP 000000"></label>
+          </div>
+          <div class="linha-2">
+            <label class="campo">Autorização de Funcionamento (AFE/ANVISA) <input type="text" name="afe"></label>
+            <label class="campo">Licença sanitária municipal <input type="text" name="licenca"></label>
+          </div>
+          <label class="campo">E-mail para assuntos de dados pessoais (LGPD)
+            <span class="dica">para onde o cliente escreve pedindo exclusão de dados</span>
+            <input type="email" name="email_dados">
+          </label>
+
+          <hr style="border:0;border-top:1px solid var(--linha);margin:10px 0 4px">
+          <h2 style="font-family:var(--display);font-size:1.05rem;margin:0">Medição de anúncio</h2>
+          <p class="olho-adm" style="margin:0 0 6px">
+            Só carregam depois que o visitante aceitar os cookies. Deixe vazio
+            enquanto não houver campanha — assim o banner de cookies nem aparece.
+            O clique no WhatsApp já é enviado como conversão.
+          </p>
+          <div class="linha-2">
+            <label class="campo">ID do Pixel do Meta <input type="text" name="meta_pixel" placeholder="000000000000000"></label>
+            <label class="campo">ID do Google Tag <input type="text" name="google_tag" placeholder="G-XXXXXXXXXX"></label>
+          </div>
+
+          <div><button class="bt bt--solido" type="submit">Salvar dados da loja</button></div>
+        </form>
+      </div>
+
+      <div class="painel" id="checklist"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ================= MODAL ================= -->
+<div class="fundo-adm" id="fundoAdm" hidden></div>
+
+<div class="modal" id="modalProduto" role="dialog" aria-modal="true" aria-labelledby="tituloProduto" hidden>
+  <h2 id="tituloProduto">Novo produto</h2>
+  <form id="formProduto">
+    <div class="recado" id="erroProduto" hidden></div>
+    <label class="campo">Nome <input type="text" name="nome" required></label>
+    <label class="campo">Linha técnica <span class="dica">dosagem, quantidade, marca</span>
+      <input type="text" name="spec" placeholder="10 comprimidos · genérico">
+    </label>
+    <div class="linha-2">
+      <label class="campo">Preço <span class="dica">deixe vazio para “Consultar valor”</span>
+        <input type="number" name="preco" step="0.01" min="0" placeholder="8.90">
+      </label>
+      <label class="campo">Categoria <select name="categoria" required></select></label>
+    </div>
+    <div class="linha-2">
+      <label class="campo">Desenho do card <span class="dica">usado quando não há foto</span>
+        <select name="arte">
+          <option value="caixa">Caixa</option>
+          <option value="frasco">Frasco</option>
+          <option value="bisnaga">Bisnaga</option>
+          <option value="garrafa">Garrafa</option>
+          <option value="bebe">Bebê</option>
+          <option value="aparelho">Aparelho</option>
+          <option value="beleza">Beleza</option>
+        </select>
+      </label>
+      <label class="campo">Selo
+        <select name="selo">
+          <option value="">Nenhum</option>
+          <option value="top">Mais pedido</option>
+          <option value="promo">Oferta</option>
+          <option value="receita">Só com receita</option>
+        </select>
+      </label>
+    </div>
+    <label class="campo">Foto do produto <span class="dica">opcional — se houver, substitui o desenho</span>
+      <input type="file" name="arquivo" accept="image/*">
+    </label>
+    <div id="fotoAtual" hidden style="display:flex;gap:10px;align-items:center">
+      <img id="fotoPrevia" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:10px">
+      <button class="bt bt--mini bt--perigo" type="button" id="btTirarFoto">Tirar a foto</button>
+    </div>
+    <div class="linha-2">
+      <label class="campo">Posição <span class="dica">menor aparece primeiro</span>
+        <input type="number" name="ordem" min="0" value="0">
+      </label>
+      <label class="marcar" style="align-self:end;padding-bottom:10px">
+        <input type="checkbox" name="ativo" checked> Aparecer no catálogo
+      </label>
+    </div>
+    <div class="modal__base">
+      <button class="bt" type="button" data-fechar>Cancelar</button>
+      <button class="bt bt--solido" type="submit" id="btSalvarProduto">Salvar</button>
+    </div>
+  </form>
+</div>
+
+<div class="modal" id="modalServico" role="dialog" aria-modal="true" aria-labelledby="tituloServico" hidden>
+  <h2 id="tituloServico">Novo serviço</h2>
+  <form id="formServico">
+    <div class="recado" id="erroServico" hidden></div>
+    <label class="campo">Nome <input type="text" name="nome" required></label>
+    <label class="campo">Descrição <textarea name="texto"></textarea></label>
+    <div class="linha-2">
+      <label class="campo">Nota <span class="dica">ex.: “Com receita”</span><input type="text" name="nota"></label>
+      <label class="campo">Ícone
+        <select name="ico">
+          <option value="coracao">Coração</option>
+          <option value="seringa">Seringa</option>
+          <option value="gota">Gota</option>
+          <option value="moto">Moto</option>
+        </select>
+      </label>
+    </div>
+    <div class="linha-2">
+      <label class="campo">Posição <input type="number" name="ordem" min="0" value="0"></label>
+      <label class="marcar" style="align-self:end;padding-bottom:10px">
+        <input type="checkbox" name="ativo" checked> Aparecer no site
+      </label>
+    </div>
+    <div class="modal__base">
+      <button class="bt" type="button" data-fechar>Cancelar</button>
+      <button class="bt bt--solido" type="submit">Salvar</button>
+    </div>
+  </form>
+</div>
+
+<script type="module" src="assets/admin.js"></script>
+</body>
+</html>

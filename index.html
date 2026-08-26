@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drogaria Munhoz — Catálogo | Agudos/SP</title>
+<meta name="description" content="Catálogo da Drogaria Munhoz em Agudos/SP. Monte sua lista e envie o pedido pelo WhatsApp. Rua 13 de Maio, 807 — Centro. Todos os dias, das 08h às 21h.">
+<meta name="theme-color" content="#D8121B">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<a class="pular" href="#catalogo">Ir direto para o catálogo</a>
+
+<!-- ================= TARJA ================= -->
+<div class="tarja">
+  <div class="tarja__wrap">
+    <span class="tarja__item"><b data-loja="horario">Todos os dias, das 08h às 21h</b></span>
+    <span class="tarja__sep" aria-hidden="true">+</span>
+    <span class="tarja__item">Entrega em Agudos/SP no mesmo dia</span>
+    <span class="tarja__sep" aria-hidden="true">+</span>
+    <span class="tarja__item" data-loja="endereco">Rua 13 de Maio, 807 — Centro</span>
+  </div>
+</div>
+
+<!-- ================= CABEÇALHO ================= -->
+<header class="topo" id="topo">
+  <div class="topo__wrap">
+    <a class="marca" href="#topo" aria-label="Drogaria Munhoz — início">
+      <span class="marca__selo" aria-hidden="true">
+        <svg viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="60" fill="#D8121B"/>
+          <text x="60" y="42" text-anchor="middle" fill="#fff" font-family="Geist, sans-serif" font-size="11" letter-spacing="1.6">DROGARIA</text>
+          <text x="60" y="70" text-anchor="middle" fill="#fff" font-family="Bricolage Grotesque, sans-serif" font-size="27" font-weight="800">Munhoz</text>
+          <path d="M55 82h10v8h8v10h-8v8H55v-8h-8V90h8z" fill="#fff"/>
+        </svg>
+      </span>
+      <span class="marca__txt">
+        <strong>Drogaria Munhoz</strong>
+        <em>Agudos · SP</em>
+      </span>
+    </a>
+
+    <nav class="nav" id="nav" aria-label="Principal">
+      <a href="#catalogo">Catálogo</a>
+      <a href="#servicos">Serviços</a>
+      <a href="#como">Como pedir</a>
+      <a href="#contato">Contato</a>
+    </nav>
+
+    <div class="topo__acoes">
+      <a class="btn btn--zap" data-zap href="https://wa.me/551434431470" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2m0 2a8 8 0 1 1-4.1 14.9l-.4-.2-2.6.7.7-2.5-.3-.4A8 8 0 0 1 12 4m-3.4 4c-.2 0-.5 0-.7.4-.3.3-.9.9-.9 2.1s.9 2.4 1 2.6c.2.2 1.8 2.9 4.5 3.9 2.2.9 2.7.7 3.2.6.5 0 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.7-.4-1.6-.8c-.2 0-.4-.1-.6.1l-.8 1c-.2.2-.3.2-.5.1-.3-.1-1.2-.5-2.2-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.2 0-.4.1-.5l.4-.5.3-.5v-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4z"/></svg>
+        <span data-loja="telefone">(14) 3443-1470</span>
+      </a>
+      <button class="btn btn--lista" id="abrirLista" aria-haspopup="dialog" aria-controls="gaveta">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path fill="currentColor" d="M7 4h10l1 3h3v2h-1.2l-1.3 11.1a2 2 0 0 1-2 1.9H7.5a2 2 0 0 1-2-1.9L4.2 9H3V7h3zm2 3h6l-.5-1h-5zM6.2 9l1.3 10.9h9l1.3-11z"/></svg>
+        <span>Minha lista</span>
+        <b class="contador" id="contador" data-vazio="true">0</b>
+      </button>
+      <button class="hamburguer" id="hamburguer" aria-expanded="false" aria-controls="nav" aria-label="Abrir menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="hero__wrap">
+    <div class="hero__texto">
+      <p class="olho"><span class="pin" aria-hidden="true">+</span> Farmácia de bairro em Agudos/SP</p>
+      <h1>Seu remédio já separado<br><span class="grifo">antes de você chegar.</span></h1>
+      <p class="chamada">Percorra o catálogo, monte sua lista e envie no WhatsApp. A gente confere o estoque, responde com o valor final e entrega na sua casa no mesmo dia.</p>
+
+      <form class="busca busca--grande" role="search" onsubmit="return false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path fill="currentColor" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2m0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12"/></svg>
+        <input type="search" id="buscaHero" placeholder="Buscar dipirona, protetor solar, fralda…" aria-label="Buscar produtos no catálogo" autocomplete="off">
+      </form>
+
+      <div class="atalhos" id="atalhos" aria-label="Categorias em destaque"></div>
+    </div>
+
+    <aside class="hero__selo" aria-hidden="true">
+      <div class="anel">
+        <svg viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="60" fill="#D8121B"/>
+          <text x="60" y="41" text-anchor="middle" fill="#fff" font-family="Geist, sans-serif" font-size="10.5" letter-spacing="2.2">DROGARIA</text>
+          <text x="60" y="71" text-anchor="middle" fill="#fff" font-family="Bricolage Grotesque, sans-serif" font-size="28" font-weight="800">Munhoz</text>
+          <path d="M55 82h10v8h8v10h-8v8H55v-8h-8V90h8z" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="fixa fixa--a">
+        <span class="ponto"></span>
+        <div><strong id="statusLoja">Aberto agora</strong><small id="statusHora">Fecha às 21h</small></div>
+      </div>
+      <div class="fixa fixa--b">
+        <div><strong>Entrega no mesmo dia</strong><small>Agudos e região central</small></div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= CATÁLOGO ================= -->
+<section class="secao" id="catalogo">
+  <div class="wrap">
+    <div class="secao__cabeca">
+      <div>
+        <p class="olho"><span class="pin" aria-hidden="true">+</span> Catálogo</p>
+        <h2>O que tem na prateleira</h2>
+      </div>
+      <form class="busca" role="search" onsubmit="return false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path fill="currentColor" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2m0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12"/></svg>
+        <input type="search" id="buscaCatalogo" placeholder="Buscar no catálogo" aria-label="Buscar no catálogo" autocomplete="off">
+      </form>
+    </div>
+
+    <div class="filtros" id="filtros" role="group" aria-label="Filtrar por categoria"></div>
+    <p class="resultado" id="resultado" role="status"></p>
+
+    <div class="grade" id="grade"></div>
+
+    <div class="vazio" id="vazio" hidden>
+      <p class="vazio__titulo">Nada encontrado para esse termo.</p>
+      <p>O catálogo mostra parte do que temos na loja. Chame no WhatsApp que a gente procura pra você.</p>
+      <a class="btn btn--solido" data-zap href="https://wa.me/551434431470" target="_blank" rel="noopener">Perguntar no WhatsApp</a>
+    </div>
+
+    <p class="aviso"><b>Importante:</b> <span data-loja="aviso">Medicamentos sujeitos a receita só são entregues com a apresentação da prescrição. Preços e disponibilidade são confirmados no atendimento.</span></p>
+  </div>
+</section>
+
+<!-- ================= COMO PEDIR ================= -->
+<section class="secao secao--escura" id="como">
+  <div class="wrap">
+    <p class="olho olho--claro"><span class="pin" aria-hidden="true">+</span> Como pedir</p>
+    <h2 class="branco">Três passos, um WhatsApp</h2>
+    <ol class="passos">
+      <li>
+        <span class="passos__num">01</span>
+        <h3>Monte a lista</h3>
+        <p>Toque em <b>+ Lista</b> nos produtos que você quer. Dá pra ajustar a quantidade a qualquer momento.</p>
+      </li>
+      <li>
+        <span class="passos__num">02</span>
+        <h3>Envie no WhatsApp</h3>
+        <p>A lista vira uma mensagem pronta. É só apertar enviar e escrever seu endereço.</p>
+      </li>
+      <li>
+        <span class="passos__num">03</span>
+        <h3>Receba em casa</h3>
+        <p>Confirmamos o valor final e o prazo. Entrega em Agudos no mesmo dia ou retirada no balcão.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ================= SERVIÇOS ================= -->
+<section class="secao" id="servicos">
+  <div class="wrap">
+    <p class="olho"><span class="pin" aria-hidden="true">+</span> Na loja</p>
+    <h2>Serviços do balcão</h2>
+    <div class="servicos" id="servicos-lista"></div>
+  </div>
+</section>
+
+<!-- ================= CONTATO ================= -->
+<section class="secao secao--clara" id="contato">
+  <div class="wrap contato">
+    <div class="contato__info">
+      <p class="olho"><span class="pin" aria-hidden="true">+</span> Onde nos achar</p>
+      <h2>Rua 13 de Maio, 807<br>Centro — Agudos/SP</h2>
+      <dl class="dados">
+        <div><dt>Horário</dt><dd data-loja="horario">Todos os dias, das 08h às 21h</dd></div>
+        <div><dt>WhatsApp e telefone</dt><dd><a data-zap data-loja="telefone" href="https://wa.me/551434431470" target="_blank" rel="noopener">(14) 3443-1470</a></dd></div>
+        <div><dt>Instagram</dt><dd><a data-instagram="texto" href="https://instagram.com/drogaria_munhoz" target="_blank" rel="noopener">@drogaria_munhoz</a></dd></div>
+      </dl>
+      <div class="contato__botoes">
+        <a class="btn btn--solido" data-zap href="https://wa.me/551434431470" target="_blank" rel="noopener">Falar com a farmácia</a>
+        <a class="btn btn--linha" data-mapa href="https://www.google.com/maps/search/?api=1&amp;query=Rua+13+de+Maio,+807,+Centro,+Agudos,+SP" target="_blank" rel="noopener">Ver no mapa</a>
+      </div>
+    </div>
+    <div class="contato__mapa" aria-hidden="true">
+      <div class="mapa__grade"></div>
+      <div class="mapa__via"></div>
+      <div class="mapa__pin"><span>+</span></div>
+      <p class="mapa__rotulo">R. 13 DE MAIO, 807</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ================= RODAPÉ ================= -->
+<footer class="rodape">
+  <div class="wrap rodape__wrap">
+    <div class="rodape__marca">
+      <span class="marca__selo marca__selo--sm" aria-hidden="true">
+        <svg viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="60" fill="#D8121B"/>
+          <text x="60" y="42" text-anchor="middle" fill="#fff" font-family="Geist, sans-serif" font-size="11" letter-spacing="1.6">DROGARIA</text>
+          <text x="60" y="70" text-anchor="middle" fill="#fff" font-family="Bricolage Grotesque, sans-serif" font-size="27" font-weight="800">Munhoz</text>
+          <path d="M55 82h10v8h8v10h-8v8H55v-8h-8V90h8z" fill="#fff"/>
+        </svg>
+      </span>
+      <p><span data-loja="sobre">Produtos farmacêuticos, saúde e beleza.</span><br><span data-loja="endereco_cidade">Rua 13 de Maio, 807 — Centro, Agudos — SP</span></p>
+    </div>
+    <nav class="rodape__links" aria-label="Rodapé">
+      <a href="#catalogo">Catálogo</a>
+      <a href="#servicos">Serviços</a>
+      <a href="#como">Como pedir</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <!-- dados obrigatórios de farmácia: cada linha some sozinha
+         enquanto o dado não estiver cadastrado no painel -->
+    <div class="rodape__conformidade" data-bloco>
+      <p data-linha="razao_social"><span data-loja="razao_social"></span></p>
+      <p data-linha="cnpj">CNPJ <span data-loja="cnpj"></span></p>
+      <p data-linha="farmaceutico">Farmacêutico(a) responsável técnico:
+        <span data-loja="farmaceutico"></span> — <span data-loja="crf"></span></p>
+      <p data-linha="afe">Autorização de Funcionamento (ANVISA) <span data-loja="afe"></span></p>
+      <p data-linha="licenca">Licença sanitária municipal <span data-loja="licenca"></span></p>
+    </div>
+
+    <nav class="rodape__juridico" aria-label="Documentos">
+      <a href="privacidade.html">Política de Privacidade</a>
+      <a href="termos.html">Termos de Uso</a>
+      <a href="admin.html">Área do lojista</a>
+    </nav>
+
+    <p class="rodape__legal">Este site é um catálogo. Ele não realiza vendas online:
+      os pedidos são fechados pelo WhatsApp. Medicamentos sujeitos a receita não têm
+      preço divulgado e só são dispensados mediante apresentação da prescrição.</p>
+  </div>
+</footer>
+
+<!-- ================= GAVETA DA LISTA ================= -->
+<div class="fundo" id="fundo" hidden></div>
+<aside class="gaveta" id="gaveta" role="dialog" aria-modal="true" aria-labelledby="gavetaTitulo" hidden>
+  <header class="gaveta__topo">
+    <h2 id="gavetaTitulo">Minha lista</h2>
+    <button class="fechar" id="fecharLista" aria-label="Fechar lista">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 10.6 5.3-5.3 1.4 1.4-5.3 5.3 5.3 5.3-1.4 1.4-5.3-5.3-5.3 5.3-1.4-1.4 5.3-5.3-5.3-5.3 1.4-1.4z"/></svg>
+    </button>
+  </header>
+  <div class="gaveta__corpo" id="gavetaCorpo"></div>
+  <footer class="gaveta__base">
+    <div class="total">
+      <span>Total estimado</span>
+      <strong id="total">R$ 0,00</strong>
+    </div>
+    <p class="total__nota">O valor final é confirmado no WhatsApp, junto com o estoque.</p>
+    <a class="btn btn--solido btn--bloco" id="enviarZap" data-zap href="https://wa.me/551434431470" target="_blank" rel="noopener">Enviar pedido no WhatsApp</a>
+    <button class="limpar" id="limparLista">Limpar lista</button>
+  </footer>
+</aside>
+
+<button class="flutuante" id="flutuante" hidden aria-label="Abrir minha lista">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4h10l1 3h3v2h-1.2l-1.3 11.1a2 2 0 0 1-2 1.9H7.5a2 2 0 0 1-2-1.9L4.2 9H3V7h3zm2 3h6l-.5-1h-5zM6.2 9l1.3 10.9h9l1.3-11z"/></svg>
+  <b id="flutuanteNum">0</b>
+</button>
+
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>

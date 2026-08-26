@@ -1,0 +1,6 @@
+# Arquivos de trabalho: NÃO vão pro ar.
+# Publicados, entregariam o e-mail de login do dono e o esquema do banco
+# de bandeja pra quem quisesse tentar a sorte no /admin.
+*.sql
+LEIA-ME.md
+.env.local
