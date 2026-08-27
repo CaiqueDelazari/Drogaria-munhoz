@@ -6,11 +6,71 @@
 <title>Drogaria Munhoz — Catálogo | Agudos/SP</title>
 <meta name="description" content="Catálogo da Drogaria Munhoz em Agudos/SP. Monte sua lista e envie o pedido pelo WhatsApp. Rua 13 de Maio, 807 — Centro. Todos os dias, das 08h às 21h.">
 <meta name="theme-color" content="#D8121B">
+
+<!-- Compartilhamento (WhatsApp, Facebook, Instagram) e indexação.
+     Sem isto, o link colado no WhatsApp aparece cru, sem imagem nem texto.
+     ATENCAO: quando drogariamunhoz.com.br entrar no ar, troque o dominio
+     nas 3 URLs abaixo e no sitemap.xml. -->
+<link rel="canonical" href="https://drogaria-munhoz.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Drogaria Munhoz">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="Drogaria Munhoz — Catálogo | Agudos/SP">
+<meta property="og:description" content="Monte sua lista pelo site e receba em casa no mesmo dia. Farmácia em Agudos/SP, Rua 13 de Maio, 807 — Centro. Todos os dias, das 08h às 21h.">
+<meta property="og:url" content="https://drogaria-munhoz.vercel.app/">
+<meta property="og:image" content="https://drogaria-munhoz.vercel.app/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Drogaria Munhoz — Agudos/SP. Monte sua lista pelo site e receba em casa no mesmo dia.">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css">
+
+<!-- Dado estruturado: diz ao Google que isto e uma farmacia fisica em
+     Agudos, com endereco e horario. E o que alimenta o resultado de
+     busca local ("farmacia perto de mim"). Confere com o que esta na
+     tela - dado inventado aqui vira penalizacao, nao vantagem. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Pharmacy",
+  "name": "Drogaria Munhoz",
+  "description": "Farmácia em Agudos/SP. Catálogo com pedido pelo WhatsApp e entrega no mesmo dia.",
+  "url": "https://drogaria-munhoz.vercel.app/",
+  "image": "https://drogaria-munhoz.vercel.app/assets/og.png",
+  "telephone": "+551434431470",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Rua 13 de Maio, 807 — Centro",
+    "addressLocality": "Agudos",
+    "addressRegion": "SP",
+    "addressCountry": "BR"
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "opens": "08:00",
+      "closes": "21:00"
+    }
+  ],
+  "areaServed": {
+    "@type": "City",
+    "name": "Agudos"
+  }
+}
+</script>
 </head>
 <body>
 

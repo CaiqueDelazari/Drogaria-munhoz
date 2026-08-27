@@ -1,0 +1,7 @@
+# Drogaria Munhoz
+# O catalogo e publico e deve ser indexado. O painel do lojista, nao.
+User-agent: *
+Allow: /
+Disallow: /admin.html
+
+Sitemap: https://drogaria-munhoz.vercel.app/sitemap.xml

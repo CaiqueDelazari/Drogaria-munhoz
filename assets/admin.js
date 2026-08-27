@@ -13,7 +13,7 @@ import {
   carregarProdutos, criarProduto, atualizarProduto, apagarProduto,
   carregarCategorias, criarCategoria, renomearCategoria, apagarCategoria, salvarOrdemCategorias,
   carregarServicos, criarServico, atualizarServico, apagarServico,
-  enviarFoto,
+  enviarFoto, apagarFoto,
 } from "./banco.js";
 
 const $ = (s) => document.querySelector(s);
@@ -34,6 +34,7 @@ const estado = {
   editando: null,       // produto em edição (null = novo)
   editandoServico: null,
   fotoAtual: "",
+  fotoAnterior: "",
   busca: "",
   filtroCat: "",
 };
@@ -235,6 +236,7 @@ $("#listaProdutos").addEventListener("click", async (ev) => {
     if (!confirm('Apagar "' + p.nome + '" de vez? Não dá pra desfazer.')) return;
     try {
       await apagarProduto(p.id);
+      apagarFoto(p.foto);
       estado.produtos = estado.produtos.filter((x) => x.id !== p.id);
       desenharProdutos();
       avisar("Produto apagado.");
@@ -266,6 +268,7 @@ function abrirModalProduto(p) {
   const f = $("#formProduto");
   estado.editando = p || null;
   estado.fotoAtual = p?.foto || "";
+  estado.fotoAnterior = p?.foto || "";
 
   $("#tituloProduto").textContent = p ? "Editar produto" : "Novo produto";
   $("#erroProduto").hidden = true;
@@ -365,6 +368,11 @@ $("#formProduto").addEventListener("submit", async (ev) => {
     estado.produtos.sort((a, b) => (a.ordem - b.ordem) || a.nome.localeCompare(b.nome, "pt-BR"));
     desenharProdutos();
     fecharModais();
+
+    // so agora que o produto esta salvo: some com o arquivo que ficou pra tras
+    if (estado.fotoAnterior && estado.fotoAnterior !== dados.foto) {
+      apagarFoto(estado.fotoAnterior);
+    }
   } catch (e) {
     $("#erroProduto").hidden = false;
     $("#erroProduto").textContent = erroDe(e);

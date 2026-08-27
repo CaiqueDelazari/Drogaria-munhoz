@@ -17,6 +17,10 @@ termos.html             Termos de Uso
 admin.html              painel do lojista (login + cadastro)
 supabase.sql            estrutura do banco — rode uma vez no Supabase
 limpar-exemplos.sql     apaga catálogo de exemplo (só se rodou a versão antiga)
+vercel.json             cabeçalhos de segurança da hospedagem
+robots.txt              o que o Google indexa (tudo, menos o /admin)
+sitemap.xml             mapa do site para busca
+og-imagem.html          fonte da imagem de preview — abra e print para regerar
 assets/config.js        chaves do Supabase + dados de reserva
 assets/banco.js         conversa com o Supabase (catálogo e admin)
 assets/dados-loja.js    joga os dados da loja nas páginas (site e documentos)
@@ -27,6 +31,7 @@ assets/legal.js         preenche a privacidade e os termos
 assets/artes.js         desenhos SVG dos produtos e ícones dos serviços
 assets/styles.css       visual (cores, tipografia, layout)
 assets/favicon.svg      ícone da aba do navegador
+assets/og.png           imagem que aparece quando o link é colado no WhatsApp
 ```
 
 ## Como ligar o banco (uma vez só)
@@ -148,6 +153,39 @@ painel — essa decisão é dele.
   card usa o desenho da categoria.
 - **Serviços**: confira a lista na aba Serviços — ajuste conforme o que a
   loja realmente oferece.
+
+## Link no WhatsApp, Google e segurança da hospedagem
+
+O pedido chega pelo WhatsApp, então o link colado lá **é** a vitrine. As três
+páginas públicas trazem `og:` e `twitter:` completos, apontando para
+`assets/og.png` (1200×630) — sem isso o link aparece cru, só a URL.
+
+- **Regerar a imagem**: abra o `og-imagem.html` no navegador e tire um print de
+  1200×630, ou rode o Chrome em modo headless:
+  `chrome --headless --window-size=1200,630 --screenshot=assets/og.png og-imagem.html`.
+  Refaça sempre que endereço ou horário mudarem — o texto está lá dentro.
+- **`robots.txt`** libera o catálogo e **bloqueia o `/admin.html`**, que também
+  já sai com `noindex` na página e no cabeçalho HTTP. Painel de lojista não
+  aparece no Google.
+- **`index.html` tem JSON-LD de `Pharmacy`** com endereço, telefone e horário —
+  é o que alimenta a busca local ("farmácia perto de mim" / Google Maps). Os
+  dados ali precisam bater com os da tela; dado inventado vira penalização.
+- **`vercel.json`** aplica `X-Content-Type-Options`, `Referrer-Policy`,
+  `Permissions-Policy` e `X-Frame-Options`. O `/admin.html` ainda recebe
+  `X-Frame-Options: DENY` e `Cache-Control: no-store`, para o painel não poder
+  ser embutido em iframe de outro site nem ficar em cache de navegador
+  compartilhado.
+
+### ⚠️ Quando o domínio entrar no ar
+
+O domínio `drogariamunhoz.com.br` já está no projeto da Vercel, esperando dois
+registros **A → 76.76.21.21** no registro.br (raiz e `www`). Assim que resolver:
+
+1. Troque `https://drogaria-munhoz.vercel.app` por `https://drogariamunhoz.com.br`
+   em `index.html`, `privacidade.html`, `termos.html` (canonical + og:url +
+   og:image), no `robots.txt` e no `sitemap.xml`.
+2. No Supabase, Authentication > URL Configuration, ponha o domínio no
+   *Site URL* — é o que os links de e-mail (recuperação de senha) usam.
 
 ## Como publicar
 

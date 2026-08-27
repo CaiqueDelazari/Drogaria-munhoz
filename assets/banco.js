@@ -165,6 +165,19 @@ export async function enviarFoto(arquivo) {
   return data.publicUrl;
 }
 
+/* Tirar ou trocar a foto de um produto nao apagava o arquivo do storage:
+   ele ficava ocupando espaco pra sempre. Falha aqui e engolida de proposito
+   - foto orfa e chateacao, produto que nao salva e prejuizo. */
+export async function apagarFoto(url) {
+  if (!url) return;
+  const marca = `/object/public/${BUCKET}/`;
+  const i = url.indexOf(marca);
+  if (i === -1) return;                    // foto que nao e do nosso bucket
+  const nome = decodeURIComponent(url.slice(i + marca.length).split("?")[0]);
+  if (!nome) return;
+  try { await sb.storage.from(BUCKET).remove([nome]); } catch (e) {}
+}
+
 /* ---------- Login ---------- */
 export async function entrar(email, senha) {
   const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
