@@ -4,4 +4,4 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 
-Sitemap: https://drogaria-munhoz.vercel.app/sitemap.xml
+Sitemap: https://drogariamunhoz.com.br/sitemap.xml

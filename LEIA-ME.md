@@ -176,16 +176,19 @@ páginas públicas trazem `og:` e `twitter:` completos, apontando para
   ser embutido em iframe de outro site nem ficar em cache de navegador
   compartilhado.
 
-### ⚠️ Quando o domínio entrar no ar
+### Domínio
 
-O domínio `drogariamunhoz.com.br` já está no projeto da Vercel, esperando dois
-registros **A → 76.76.21.21** no registro.br (raiz e `www`). Assim que resolver:
+O site atende em **https://drogariamunhoz.com.br** (e no `www`). O DNS fica no
+registro.br, com dois registros `A → 76.76.21.21` — raiz e `www` — e a Vercel
+cuida do certificado HTTPS sozinha, renovando sem intervenção.
 
-1. Troque `https://drogaria-munhoz.vercel.app` por `https://drogariamunhoz.com.br`
-   em `index.html`, `privacidade.html`, `termos.html` (canonical + og:url +
-   og:image), no `robots.txt` e no `sitemap.xml`.
-2. No Supabase, Authentication > URL Configuration, ponha o domínio no
-   *Site URL* — é o que os links de e-mail (recuperação de senha) usam.
+O endereço antigo `drogaria-munhoz.vercel.app` continua funcionando como
+atalho interno; não use em material de divulgação.
+
+Se um dia trocar de domínio, os lugares a atualizar são: `canonical`, `og:url`
+e `og:image` em `index.html`, `privacidade.html` e `termos.html`; o JSON-LD no
+`index.html`; o `robots.txt`; o `sitemap.xml`; e o *Site URL* no Supabase
+(Authentication > URL Configuration), que é o que os links de e-mail usam.
 
 ## Como publicar
 
