@@ -153,7 +153,9 @@ export async function apagarServico(id) {
 /* ---------- Foto do produto ---------- */
 export async function enviarFoto(arquivo) {
   const ext = (arquivo.name.split(".").pop() || "jpg").toLowerCase();
-  const nome = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  // randomUUID em vez de Math.random: o upload usa upsert:false, entao nome
+  // repetido faz a foto falhar na hora de subir.
+  const nome = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
   const { error } = await sb.storage.from(BUCKET).upload(nome, arquivo, {
     cacheControl: "3600",
     upsert: false,

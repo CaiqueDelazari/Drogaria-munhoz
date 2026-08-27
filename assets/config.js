@@ -12,7 +12,13 @@
    ===================================================================== */
 
 export const SUPABASE_URL = "https://vvasybgcuxiufimnmfxa.supabase.co";
-export const SUPABASE_ANON_KEY = "sb_publishable_uvmoyalfvsMxd03EAgnRLw_2BLgNvPy";
+/* Esta chave e PUBLICA por design: e a chave "publishable" do Supabase e o
+   navegador de todo visitante ja a baixa junto com este arquivo. Nao ha o que
+   esconder aqui. Quem protege os dados sao as politicas RLS do supabase.sql
+   (todos leem, so o dono escreve). Scanner de segredo costuma marcar esta
+   linha - e falso positivo. So seria grave se comecasse com "sb_secret_" ou
+   fosse uma service_role: essas NUNCA entram no front. */
+export const SUPABASE_ANON_KEY = "sb_publishable_uvmoyalfvsMxd03EAgnRLw_2BLgNvPy"; // gitleaks:allow
 
 /* Dados de reserva: usados enquanto o Supabase não estiver configurado,
    ou se o site não conseguir falar com o banco. Assim a farmácia nunca
