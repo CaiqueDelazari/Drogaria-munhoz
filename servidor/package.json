@@ -1,0 +1,16 @@
+{
+  "name": "drogaria-munhoz-servidor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API e servidor de arquivos da Drogaria Munhoz, no lugar do Supabase",
+  "scripts": {
+    "start": "node servidor.mjs",
+    "criar-admin": "node scripts/criar-admin.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^5.1.0",
+    "pg": "^8.23.0"
+  }
+}

@@ -1,10 +1,10 @@
 /* ============================================================
    DROGARIA MUNHOZ — painel do lojista
 
-   Quem pode escrever de verdade é decidido pelo banco (RLS +
-   função eh_dono_farmacia). Esta tela só facilita a vida: se a
-   conta logada não for a dona da farmácia, ela avisa logo na
-   entrada em vez de deixar o erro aparecer só na hora de salvar.
+   Quem pode escrever de verdade é decidido pelo servidor: leitura é
+   pública, escrita exige sessão de administrador. Esta tela só facilita
+   a vida, avisando na entrada em vez de deixar o erro aparecer na hora
+   de salvar. (Antes eram 8 políticas de RLS no Supabase.)
    ============================================================ */
 import { ARTES, ICONES } from "./artes.js";
 import {
@@ -52,9 +52,9 @@ function avisar(texto, ok = true) {
 }
 function erroDe(e) {
   const m = e?.message || String(e);
-  if (/row-level security|violates row-level/i.test(m)) {
-    return "O banco recusou a gravação: esta conta não é a dona da farmácia. " +
-           "Confira o e-mail dentro da função eh_dono_farmacia no supabase.sql.";
+  if (/row-level security|violates row-level|entre no painel/i.test(m)) {
+    return "Sua sessão expirou ou você não está logado como administrador. " +
+           "Entre de novo para salvar.";
   }
   if (/duplicate key/i.test(m)) return "Já existe um registro com esse nome.";
   return m;
@@ -67,7 +67,7 @@ async function decidirTela() {
   if (!configurado) {
     $("#telaLogin").hidden = false;
     $("#erroLogin").hidden = false;
-    $("#erroLogin").textContent = "Supabase ainda não configurado no assets/config.js.";
+    $("#erroLogin").textContent = "O site não conseguiu falar com o próprio servidor. Recarregue a página em instantes.";
     $("#formLogin").hidden = true;
     return;
   }
@@ -111,9 +111,8 @@ async function abrirPainel(usuario) {
     const a = $("#avisoDono");
     a.hidden = false;
     a.textContent =
-      "Você está logado como " + (usuario.email || "?") + ", que não é a conta dona da farmácia. " +
-      "Dá pra ver tudo, mas o banco vai recusar qualquer alteração. " +
-      "Ajuste o e-mail dentro da função eh_dono_farmacia no supabase.sql.";
+      "Você está logado como " + (usuario.email || "?") + ", que não é uma conta de administrador. " +
+      "Dá pra ver tudo, mas o servidor vai recusar qualquer alteração.";
   }
 
   await recarregarTudo();

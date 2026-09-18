@@ -1,4 +1,11 @@
 -- =====================================================================
+-- ⚠️ OBSOLETO desde 18/09/2026 — o banco saiu do Supabase.
+--
+-- Para apagar catálogo hoje, use o painel (/admin.html) ou o Postgres da
+-- VPS. Este arquivo fica só como histórico.
+-- =====================================================================
+
+-- =====================================================================
 -- DROGARIA MUNHOZ — apagar o catálogo de exemplo
 --
 -- O supabase.sql antigo semeava 41 produtos e 7 categorias de exemplo,

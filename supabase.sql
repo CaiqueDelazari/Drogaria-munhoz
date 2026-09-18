@@ -1,4 +1,15 @@
 -- =====================================================================
+-- ⚠️ OBSOLETO desde 18/09/2026 — o banco saiu do Supabase.
+--
+-- A estrutura que vale agora é `banco/schema.sql`, que roda no Postgres da
+-- VPS (banco `drogaria`). Este arquivo fica como registro de como o banco
+-- nasceu e do que as 8 políticas de RLS protegiam — elas viraram UMA regra
+-- no servidor: leitura pública, escrita exige sessão de administrador.
+--
+-- Não rode mais nada daqui: o projeto Supabase será encerrado.
+-- =====================================================================
+
+-- =====================================================================
 -- DROGARIA MUNHOZ — estrutura do banco
 --
 -- Este arquivo roda DENTRO DO MESMO PROJETO SUPABASE da Agropecuária JG.

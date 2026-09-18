@@ -2,7 +2,7 @@
    DROGARIA MUNHOZ — comportamento do catálogo
 
    Os produtos, categorias, serviços e dados de contato vêm do
-   Supabase (tabelas farmacia_*). Se o banco não responder, o site
+   API deste próprio site (ver banco.js). Se ela não responder, o site
    cai nas listas de reserva do config.js e continua funcionando.
    ============================================================ */
 import { ARTES, ICONES } from "./artes.js";
@@ -515,7 +515,7 @@ async function iniciar() {
   iniciarRastreio(loja);   // banner de cookies + pixel, nessa ordem
 
   if (prod.offline) {
-    console.warn("Catálogo em modo reserva (sem banco):", prod.erro || "Supabase não configurado");
+    console.warn("Catálogo em modo reserva (sem banco):", prod.erro || "a API do site não respondeu");
   }
 }
 

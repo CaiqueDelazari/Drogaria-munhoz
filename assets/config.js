@@ -1,27 +1,15 @@
 /* =====================================================================
    CONFIGURAÇÃO — Drogaria Munhoz
 
-   O banco fica no MESMO projeto Supabase da Agropecuária JG. As tabelas
-   da farmácia começam com "farmacia_", então as duas lojas convivem sem
-   se atrapalhar. Se um dia a farmácia ganhar projeto próprio, é só
-   trocar as duas linhas abaixo.
-
-   Onde achar: painel do Supabase > Project Settings > Data API
-   (a "anon key" pode ficar aqui no código; ela é pública por design —
-    quem protege os dados são as políticas RLS do arquivo supabase.sql)
+   Não há nada para configurar aqui. O site saiu do Supabase: o navegador
+   não fala mais com banco nenhum — fala com a API deste próprio site
+   (ver assets/banco.js). Quem guarda a credencial do Postgres é o
+   servidor, que nunca a envia para a página; por isso não existe mais URL
+   nem chave neste arquivo.
    ===================================================================== */
 
-export const SUPABASE_URL = "https://vvasybgcuxiufimnmfxa.supabase.co";
-/* Esta chave e PUBLICA por design: e a chave "publishable" do Supabase e o
-   navegador de todo visitante ja a baixa junto com este arquivo. Nao ha o que
-   esconder aqui. Quem protege os dados sao as politicas RLS do supabase.sql
-   (todos leem, so o dono escreve). Scanner de segredo costuma marcar esta
-   linha - e falso positivo. So seria grave se comecasse com "sb_secret_" ou
-   fosse uma service_role: essas NUNCA entram no front. */
-export const SUPABASE_ANON_KEY = "sb_publishable_uvmoyalfvsMxd03EAgnRLw_2BLgNvPy"; // gitleaks:allow
-
-/* Dados de reserva: usados enquanto o Supabase não estiver configurado,
-   ou se o site não conseguir falar com o banco. Assim a farmácia nunca
+/* Dados de reserva: aparecem se o site não conseguir falar com a própria
+   API (servidor reiniciando, banco fora do ar). Assim a farmácia nunca
    aparece "quebrada" pra quem visita. */
 export const LOJA_PADRAO = {
   nome: "Drogaria Munhoz",
@@ -62,7 +50,7 @@ export const LOJA_PADRAO = {
 
 /* Categorias e produtos de reserva: propositalmente VAZIOS.
 
-   Estas listas só entram no ar se o Supabase não responder. Preço de
+   Estas listas só entram no ar se a API não responder. Preço de
    medicamento não pode ser chutado por um arquivo de reserva — melhor o
    catálogo aparecer vazio por alguns minutos do que mostrar valor que
    não é o da loja. Quem manda é sempre a tabela do banco, alimentada

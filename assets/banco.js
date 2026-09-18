@@ -1,71 +1,79 @@
 /* =====================================================================
-   Conversa com o Supabase. Usado tanto pelo catálogo quanto pelo admin.
+   Conversa com a API deste próprio site.
 
-   Todas as tabelas têm o prefixo "farmacia_" porque o banco é
-   compartilhado com a Agropecuária JG (mesmo projeto Supabase).
+   Antes este arquivo falava DIRETO com o Supabase: a chave pública ficava à
+   vista no config.js e quem protegia os dados eram 8 políticas de RLS. O site
+   saiu do Supabase; agora quem guarda a credencial do Postgres é o servidor
+   (servidor/servidor.mjs), que nunca a envia para a página.
+
+   As 21 funções exportadas continuam com o MESMO nome e o MESMO formato de
+   retorno de antes — é por isso que o app.js (catálogo) e o admin.js (painel,
+   645 linhas) não precisaram de uma linha de mudança.
    ===================================================================== */
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import {
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  LOJA_PADRAO,
-  PRODUTOS_PADRAO,
-  CATEGORIAS_PADRAO,
-  SERVICOS_PADRAO,
-} from "./config.js";
+import { LOJA_PADRAO, PRODUTOS_PADRAO, CATEGORIAS_PADRAO, SERVICOS_PADRAO } from "./config.js";
 
-export const configurado =
-  !!SUPABASE_URL &&
-  !SUPABASE_URL.startsWith("COLE_AQUI") &&
-  !!SUPABASE_ANON_KEY &&
-  !SUPABASE_ANON_KEY.startsWith("COLE_AQUI");
+/* O site agora é servido pelo mesmo endereço da API: não há o que configurar.
+   A constante fica porque o app.js e o admin.js a consultam. */
+export const configurado = true;
 
-export const sb = configurado ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-const BUCKET = "farmacia";
+async function api(caminho, opcoes = {}) {
+  const resposta = await fetch(`/api${caminho}`, {
+    credentials: "same-origin",
+    ...opcoes,
+    headers: opcoes.body instanceof Blob ? opcoes.headers : { "Content-Type": "application/json", ...opcoes.headers },
+  });
+  if (!resposta.ok) {
+    let mensagem = `Falha na operação (${resposta.status})`;
+    try {
+      const corpo = await resposta.json();
+      if (corpo?.erro) mensagem = corpo.erro;
+    } catch {}
+    throw new Error(mensagem);
+  }
+  if (resposta.status === 204) return null;
+  return resposta.json();
+}
 
 /* ---------- Loja ---------- */
 export async function carregarLoja() {
-  if (!sb) return { ...LOJA_PADRAO, _offline: true };
-  const { data, error } = await sb.from("farmacia_loja").select("*").eq("id", 1).maybeSingle();
-  if (error || !data) return { ...LOJA_PADRAO, _offline: true };
-  // campo vazio no banco cai no padrão, pro rodapé nunca ficar com buraco
-  const loja = { ...LOJA_PADRAO };
-  for (const [k, v] of Object.entries(data)) {
-    if (v !== null && v !== "") loja[k] = v;
+  try {
+    const data = await api("/loja");
+    if (!data) return { ...LOJA_PADRAO, _offline: true };
+    // campo vazio no banco cai no padrão, pro rodapé nunca ficar com buraco
+    const loja = { ...LOJA_PADRAO };
+    for (const [k, v] of Object.entries(data)) {
+      if (v !== null && v !== "") loja[k] = v;
+    }
+    return loja;
+  } catch {
+    return { ...LOJA_PADRAO, _offline: true };
   }
-  return loja;
 }
 
 export async function salvarLoja(loja) {
-  const { error } = await sb.from("farmacia_loja").update(loja).eq("id", 1);
-  if (error) throw error;
+  await api("/loja", { method: "PUT", body: JSON.stringify(loja) });
 }
 
 /* ---------- Produtos ---------- */
 export async function carregarProdutos({ incluirInativos = false } = {}) {
-  if (!sb) return { produtos: PRODUTOS_PADRAO, offline: true };
-  let q = sb.from("farmacia_produtos").select("*").order("ordem", { ascending: true }).order("nome");
-  if (!incluirInativos) q = q.eq("ativo", true);
-  const { data, error } = await q;
-  if (error) return { produtos: PRODUTOS_PADRAO, offline: true, erro: error.message };
-  return { produtos: data ?? [], offline: false };
+  try {
+    const produtos = await api(`/produtos${incluirInativos ? "?incluirInativos=1" : ""}`);
+    return { produtos: produtos ?? [], offline: false };
+  } catch (e) {
+    return { produtos: PRODUTOS_PADRAO, offline: true, erro: e.message };
+  }
 }
 
 export async function criarProduto(p) {
-  const { data, error } = await sb.from("farmacia_produtos").insert(p).select().single();
-  if (error) throw error;
-  return data;
+  return api("/produtos", { method: "POST", body: JSON.stringify(p) });
 }
 
 export async function atualizarProduto(id, p) {
-  const { error } = await sb.from("farmacia_produtos").update(p).eq("id", id);
-  if (error) throw error;
+  await api(`/produtos/${id}`, { method: "PUT", body: JSON.stringify(p) });
 }
 
 export async function apagarProduto(id) {
-  const { error } = await sb.from("farmacia_produtos").delete().eq("id", id);
-  if (error) throw error;
+  await api(`/produtos/${id}`, { method: "DELETE" });
 }
 
 /* ---------- Categorias ----------
@@ -75,132 +83,111 @@ const categoriasDeReserva = () =>
   CATEGORIAS_PADRAO.map((nome, i) => ({ id: `padrao-${i}`, nome, ordem: i + 1 }));
 
 export async function carregarCategorias() {
-  if (!sb) return { categorias: categoriasDeReserva(), offline: true };
-  const { data, error } = await sb
-    .from("farmacia_categorias")
-    .select("*")
-    .order("ordem", { ascending: true })
-    .order("nome");
-  if (error) return { categorias: categoriasDeReserva(), offline: true, erro: error.message };
-  if (!data?.length) return { categorias: categoriasDeReserva(), offline: false, vazio: true };
-  return { categorias: data, offline: false };
+  try {
+    const categorias = await api("/categorias");
+    if (!categorias?.length) return { categorias: categoriasDeReserva(), offline: false, vazio: true };
+    return { categorias, offline: false };
+  } catch (e) {
+    return { categorias: categoriasDeReserva(), offline: true, erro: e.message };
+  }
 }
 
 export async function criarCategoria(nome, ordem) {
-  const { data, error } = await sb
-    .from("farmacia_categorias")
-    .insert({ nome, ordem })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  return api("/categorias", { method: "POST", body: JSON.stringify({ nome, ordem }) });
 }
 
 /* Renomear troca o nome também em todos os produtos daquela categoria,
-   senão eles ficariam órfãos e sumiriam do filtro. */
-export async function renomearCategoria(id, nomeAntigo, nomeNovo) {
-  const { error } = await sb.from("farmacia_categorias").update({ nome: nomeNovo }).eq("id", id);
-  if (error) throw error;
-  const { error: erroProdutos } = await sb
-    .from("farmacia_produtos")
-    .update({ categoria: nomeNovo })
-    .eq("categoria", nomeAntigo);
-  if (erroProdutos) throw erroProdutos;
+   senão eles ficariam órfãos e sumiriam do filtro. Isso agora acontece numa
+   transação no servidor: antes eram duas chamadas soltas, e falhar no meio
+   deixava produto apontando para categoria que não existe mais. */
+export async function renomearCategoria(id, _nomeAntigo, nomeNovo) {
+  await api(`/categorias/${id}`, { method: "PUT", body: JSON.stringify({ nome: nomeNovo }) });
 }
 
 export async function apagarCategoria(id) {
-  const { error } = await sb.from("farmacia_categorias").delete().eq("id", id);
-  if (error) throw error;
+  await api(`/categorias/${id}`, { method: "DELETE" });
 }
 
 /* Grava a posição de cada categoria depois de subir/descer uma delas. */
 export async function salvarOrdemCategorias(categorias) {
-  for (const [i, c] of categorias.entries()) {
-    if (c.ordem === i + 1) continue;
-    const { error } = await sb.from("farmacia_categorias").update({ ordem: i + 1 }).eq("id", c.id);
-    if (error) throw error;
-    c.ordem = i + 1;
-  }
+  await api("/categorias/ordem", {
+    method: "PUT",
+    body: JSON.stringify({ categorias: categorias.map((c) => ({ id: c.id })) }),
+  });
+  categorias.forEach((c, i) => { c.ordem = i + 1; });
 }
 
 /* ---------- Serviços do balcão ---------- */
 export async function carregarServicos({ incluirInativos = false } = {}) {
-  if (!sb) return { servicos: SERVICOS_PADRAO, offline: true };
-  let q = sb.from("farmacia_servicos").select("*").order("ordem", { ascending: true });
-  if (!incluirInativos) q = q.eq("ativo", true);
-  const { data, error } = await q;
-  if (error) return { servicos: SERVICOS_PADRAO, offline: true, erro: error.message };
-  if (!data?.length) return { servicos: SERVICOS_PADRAO, offline: false, vazio: true };
-  return { servicos: data, offline: false };
+  try {
+    const servicos = await api(`/servicos${incluirInativos ? "?incluirInativos=1" : ""}`);
+    if (!servicos?.length) return { servicos: SERVICOS_PADRAO, offline: false, vazio: true };
+    return { servicos, offline: false };
+  } catch (e) {
+    return { servicos: SERVICOS_PADRAO, offline: true, erro: e.message };
+  }
 }
 
 export async function criarServico(s) {
-  const { data, error } = await sb.from("farmacia_servicos").insert(s).select().single();
-  if (error) throw error;
-  return data;
+  return api("/servicos", { method: "POST", body: JSON.stringify(s) });
 }
 
 export async function atualizarServico(id, s) {
-  const { error } = await sb.from("farmacia_servicos").update(s).eq("id", id);
-  if (error) throw error;
+  await api(`/servicos/${id}`, { method: "PUT", body: JSON.stringify(s) });
 }
 
 export async function apagarServico(id) {
-  const { error } = await sb.from("farmacia_servicos").delete().eq("id", id);
-  if (error) throw error;
+  await api(`/servicos/${id}`, { method: "DELETE" });
 }
 
-/* ---------- Foto do produto ---------- */
+/* ---------- Foto do produto ----------
+   Vai como corpo cru: sem multipart, sem dependência a mais. Quem confere se
+   é imagem de verdade é o servidor, pela assinatura dos bytes — e é ele quem
+   batiza o arquivo, porque nome vindo do navegador não é confiável. */
 export async function enviarFoto(arquivo) {
-  const ext = (arquivo.name.split(".").pop() || "jpg").toLowerCase();
-  // randomUUID em vez de Math.random: o upload usa upsert:false, entao nome
-  // repetido faz a foto falhar na hora de subir.
-  const nome = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
-  const { error } = await sb.storage.from(BUCKET).upload(nome, arquivo, {
-    cacheControl: "3600",
-    upsert: false,
+  const { url } = await api("/upload", {
+    method: "POST",
+    body: arquivo,
+    headers: { "Content-Type": arquivo.type || "application/octet-stream" },
   });
-  if (error) throw error;
-  const { data } = sb.storage.from(BUCKET).getPublicUrl(nome);
-  return data.publicUrl;
+  return url;
 }
 
-/* Tirar ou trocar a foto de um produto nao apagava o arquivo do storage:
-   ele ficava ocupando espaco pra sempre. Falha aqui e engolida de proposito
-   - foto orfa e chateacao, produto que nao salva e prejuizo. */
+/* Tirar ou trocar a foto de um produto não apagava o arquivo: ele ficava
+   ocupando espaço pra sempre. Falha aqui é engolida de propósito — foto órfã
+   é chateação, produto que não salva é prejuízo. */
 export async function apagarFoto(url) {
   if (!url) return;
-  const marca = `/object/public/${BUCKET}/`;
-  const i = url.indexOf(marca);
-  if (i === -1) return;                    // foto que nao e do nosso bucket
-  const nome = decodeURIComponent(url.slice(i + marca.length).split("?")[0]);
-  if (!nome) return;
-  try { await sb.storage.from(BUCKET).remove([nome]); } catch (e) {}
+  try {
+    await api(`/foto?url=${encodeURIComponent(url)}`, { method: "DELETE" });
+  } catch {}
 }
 
 /* ---------- Login ---------- */
 export async function entrar(email, senha) {
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
-  if (error) throw error;
-  return data.user;
+  return api("/login", { method: "POST", body: JSON.stringify({ email, senha }) });
 }
 
 export async function sair() {
-  await sb.auth.signOut();
+  try {
+    await api("/logout", { method: "POST" });
+  } catch {}
 }
 
 export async function usuarioAtual() {
-  if (!sb) return null;
-  const { data } = await sb.auth.getUser();
-  return data.user ?? null;
+  try {
+    return await api("/eu");
+  } catch {
+    return null;
+  }
 }
 
-/* Confere no próprio banco se o usuário logado é o dono DA FARMÁCIA.
-   Sem isso, alguém logado na conta da agropecuária abriria o painel da
-   farmácia e só descobriria que não pode salvar na hora de salvar. */
+/* Antes isto perguntava ao banco (`rpc("eh_dono_farmacia")`) se o usuário
+   logado era o dono DA FARMÁCIA — o mesmo projeto Supabase atendia a
+   Agropecuária, e alguém logado na conta dela abriria este painel.
+
+   Aqui o banco é só desta farmácia e só existe uma lista de administradores:
+   quem tem sessão válida é dono. A função fica porque o admin.js a chama. */
 export async function ehDono() {
-  if (!sb) return false;
-  const { data, error } = await sb.rpc("eh_dono_farmacia");
-  if (error) return false;
-  return data === true;
+  return (await usuarioAtual()) !== null;
 }

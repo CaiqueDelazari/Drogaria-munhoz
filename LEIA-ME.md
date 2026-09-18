@@ -1,9 +1,9 @@
 # Drogaria Munhoz — site catálogo
 
-Site em HTML, CSS e JavaScript puro, com o catálogo vindo do **Supabase**.
+Site em HTML, CSS e JavaScript puro, com o catálogo vindo de um **Postgres na VPS**.
 Não precisa de build nem de servidor Node: é só publicar a pasta.
 
-O banco fica **dentro do mesmo projeto Supabase da Agropecuária JG**. Para as
+O banco é **próprio desta farmácia** (banco `drogaria` na VPS). Até 18/09/2026 ficava no mesmo projeto Supabase da Agropecuária JG, e era por isso que as
 duas lojas não se atrapalharem, todas as tabelas da farmácia começam com
 `farmacia_` e as fotos vão para um bucket próprio (`farmacia`). Nada aqui
 mexe nos dados da agropecuária.
@@ -15,14 +15,15 @@ index.html              o site que o cliente vê
 privacidade.html        Política de Privacidade (LGPD)
 termos.html             Termos de Uso
 admin.html              painel do lojista (login + cadastro)
-supabase.sql            estrutura do banco — rode uma vez no Supabase
+banco/schema.sql        estrutura do banco (Postgres da VPS)
+supabase.sql            OBSOLETO: como o banco era no Supabase, só histórico
 limpar-exemplos.sql     apaga catálogo de exemplo (só se rodou a versão antiga)
 vercel.json             cabeçalhos de segurança da hospedagem
 robots.txt              o que o Google indexa (tudo, menos o /admin)
 sitemap.xml             mapa do site para busca
 og-imagem.html          fonte da imagem de preview — abra e print para regerar
-assets/config.js        chaves do Supabase + dados de reserva
-assets/banco.js         conversa com o Supabase (catálogo e admin)
+assets/config.js        dados de reserva da loja (sem chave nenhuma)
+assets/banco.js         conversa com a API do próprio site (catálogo e admin)
 assets/dados-loja.js    joga os dados da loja nas páginas (site e documentos)
 assets/rastreio.js      banner de cookies + Pixel/Google Tag
 assets/app.js           comportamento do site
@@ -34,27 +35,28 @@ assets/favicon.svg      ícone da aba do navegador
 assets/og.png           imagem que aparece quando o link é colado no WhatsApp
 ```
 
-## Como ligar o banco (uma vez só)
+## Como o banco funciona (desde 18/09/2026)
 
-1. **Rode o SQL.** Painel do Supabase (projeto da Agropecuária JG) >
-   SQL Editor > New query > cole o `supabase.sql` inteiro > Run.
-   Pode rodar de novo depois sem quebrar nada.
+O site **saiu do Supabase**. Antes o navegador falava direto com o banco, com a
+chave pública à vista, e quem barrava escrita indevida eram 8 políticas de RLS.
 
-2. **E-mail do dono já configurado.** A função `eh_dono_farmacia()` (seção 5
-   do `supabase.sql`) está com `drogariamunhoz29@hotmail.com`. Se um dia o
-   e-mail mudar, troque lá e rode o arquivo de novo — enquanto o e-mail da
-   função não bater com o da conta logada, o painel abre mas **não salva
-   nada**, e ele avisa isso na tela.
+Agora existe um servidor próprio (`servidor/servidor.mjs`, express + pg) que
+entrega o site e responde a API que o `assets/banco.js` consome. O navegador
+nunca alcança o Postgres, e a regra virou uma só: **leitura é pública, escrita
+exige sessão de administrador** (`exigirAdmin`, no servidor).
 
-3. **Crie a conta do dono.** Authentication > Users > Add user, com
-   `drogariamunhoz29@hotmail.com` — exatamente o mesmo e-mail da função.
+- **Banco:** Postgres na VPS, banco `drogaria`. A estrutura está em
+  `banco/schema.sql` (o antigo `supabase.sql` ficou só como histórico).
+- **Login:** tabela `admins`, senha em bcrypt — o mesmo formato que o Auth do
+  Supabase usava, então a senha da dona foi migrada sem precisar trocar.
+- **Trocar a senha:**
+  `printf '%s
+' 'nova-senha' | docker exec -i dlz-restaurantes-drogaria-1 node servidor/scripts/criar-admin.mjs drogariamunhoz29@hotmail.com "Drogaria Munhoz"`
+- **Fotos:** vão para o disco (volume `drogaria_uploads`), servidas em
+  `/uploads/produtos/...`. Antes ficavam no Storage do Supabase.
 
-4. **Desligue o auto-cadastro.** Authentication > Sign In / Providers >
-   Email > "Allow new users to sign up" = **desligado**. Sem isso qualquer
-   um cria conta e vira "usuário logado".
-
-Já ligado, o dono entra em `admin.html` e edita tudo por lá: produtos,
-categorias, serviços do balcão e os dados da loja.
+A dona entra em `admin.html` e edita tudo por lá: produtos, categorias,
+serviços do balcão e os dados da loja.
 
 ## O que dá pra editar no painel
 
@@ -85,14 +87,14 @@ A ordem no painel é: **Categorias primeiro, depois Produtos** (o formulário
 de produto exige uma categoria; sem nenhuma, o botão "Novo produto" manda
 você criar uma antes).
 
-> Se você rodou uma versão antiga do `supabase.sql`, ela semeou 41 produtos
+> Se você rodou uma versão antiga do `supabase.sql` (quando o banco era lá), ela semeou 41 produtos
 > e 7 categorias de exemplo. Rode o `limpar-exemplos.sql` uma vez pra tirar
 > tudo do ar. Ele não mexe nos serviços nem nos dados da loja.
 
 ## Se o banco cair
 
 O site não quebra: o `assets/config.js` guarda dados de reserva que entram
-no ar sozinhos quando o Supabase não responde. Contato, horário e serviços
+no ar sozinhos quando a API não responde. Contato, horário e serviços
 têm reserva; **produtos e categorias estão vazios de propósito** — melhor o
 catálogo aparecer vazio por alguns minutos do que mostrar preço que não é o
 da loja. Se um dia quiser reserva de catálogo, copie pra lá os produtos
@@ -187,28 +189,32 @@ atalho interno; não use em material de divulgação.
 
 Se um dia trocar de domínio, os lugares a atualizar são: `canonical`, `og:url`
 e `og:image` em `index.html`, `privacidade.html` e `termos.html`; o JSON-LD no
-`index.html`; o `robots.txt`; o `sitemap.xml`; e o *Site URL* no Supabase
+`index.html`; o `robots.txt`; e o `sitemap.xml`
 (Authentication > URL Configuration), que é o que os links de e-mail usam.
 
 ## Como publicar
 
-Qualquer hospedagem de site estático serve. A mais rápida:
+O site roda na VPS, no compose de `/opt/dlz-restaurantes` (serviço `drogaria`).
+O Dockerfile faz `COPY . ./`, então **editar arquivo na VPS não muda nada** sem
+reconstruir a imagem:
 
 ```bash
-npx vercel deploy --prod
-```
+# da máquina local, enviando o que mudou
+tar -cf - index.html admin.html assets servidor banco   | ssh -i ~/.ssh/id_ed25519_dlz root@187.127.62.147 'tar -x -C /opt/dlz-restaurantes/drogaria'
 
-Ou arraste a pasta para o painel da Vercel / Netlify. Também funciona em
-hospedagem comum via FTP.
+# na VPS
+cd /opt/dlz-restaurantes
+docker compose build drogaria && docker compose up -d --no-deps drogaria
+```
 
 > Os arquivos JS são módulos ES e usam `import`. Abrir o `index.html` com
 > duplo clique (`file://`) não funciona por causa do CORS do navegador —
-> rode um servidor local (`npx serve .`) ou publique.
+> rode o servidor (`cd servidor && npm start`) ou use o ambiente da VPS.
 
 ## Detalhes de implementação
 
 - A `anon key` no `config.js` é pública por design. Quem protege os dados são
-  as políticas RLS do `supabase.sql`: **qualquer um lê, só o dono escreve**.
+  a regra do servidor (`exigirAdmin`): **qualquer um lê, só o administrador escreve**.
 - A lista de compras fica no `localStorage`, então o cliente não perde o
   pedido se recarregar. Produto apagado no painel some da lista sozinho.
 - O botão "Enviar pedido no WhatsApp" monta a mensagem com itens,
