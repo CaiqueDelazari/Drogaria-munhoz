@@ -332,6 +332,15 @@
   <form id="formProduto">
     <div class="recado" id="erroProduto" hidden></div>
     <label class="campo">Nome <input type="text" name="nome" required></label>
+    <label class="campo">Tipo
+      <select name="tipo">
+        <option value="produto">Produto (higiene, beleza, bebê, aparelho…)</option>
+        <option value="mip">Medicamento sem receita</option>
+        <option value="receita">Medicamento com receita — não aparece no site</option>
+        <option value="controlado">Controlado (tarja preta / receita retida)</option>
+      </select>
+    </label>
+    <div class="recado" id="dicaTipo" hidden></div>
     <label class="campo">Linha técnica <span class="dica">dosagem, quantidade, marca</span>
       <input type="text" name="spec" placeholder="10 comprimidos · genérico">
     </label>
@@ -358,7 +367,6 @@
           <option value="">Nenhum</option>
           <option value="top">Mais pedido</option>
           <option value="promo">Oferta</option>
-          <option value="receita">Só com receita</option>
         </select>
       </label>
     </div>

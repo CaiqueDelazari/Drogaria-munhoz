@@ -77,6 +77,7 @@ create table if not exists produtos (
   arte      text not null default 'caixa', -- desenho do card quando não há foto
   selo      text,                          -- null | promo | top | receita
   foto      text default '',               -- caminho da foto; vazio = desenho
+  medicamento boolean not null default false, -- true = leva a advertência da RDC 96
   ativo     boolean not null default true, -- false = some do catálogo
   ordem     int not null default 0,
   criado_em timestamptz not null default now(),
@@ -90,8 +91,18 @@ create table if not exists produtos (
   -- só na tela, porque tela se contorna: painel novo, importação, consulta
   -- manual. Aqui não passa por caminho nenhum.
   constraint produtos_tarja_sem_preco
-    check (selo is distinct from 'receita' or preco is null)
+    check (selo is distinct from 'receita' or preco is null),
+
+  -- Remédio de receita é medicamento por definição (ver 002-medicamento.sql).
+  constraint produtos_receita_e_medicamento
+    check (selo is distinct from 'receita' or medicamento)
 );
+
+-- Produto com selo `receita` fica no banco para a loja, mas NUNCA sai pela
+-- API pública: nem nome, nem preço, nem foto (servidor.mjs). A lei veda a
+-- propaganda de medicamento sob prescrição ao público leigo, e catálogo
+-- aberto com nome e embalagem já é propaganda (Lei 9.294/96, art. 7º;
+-- RDC 96/2008).
 create index if not exists produtos_ativo_ordem_idx on produtos (ativo, ordem);
 
 -- -------------------------------------------------------------- serviços

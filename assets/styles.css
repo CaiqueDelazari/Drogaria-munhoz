@@ -384,6 +384,13 @@ p{ margin:0; }
 }
 .produto__nome{ font-family:var(--display); font-size:1.02rem; font-weight:700; letter-spacing:-.015em; line-height:1.2; }
 .produto__spec{ font-family:var(--mono); font-size:.76rem; color:var(--tinta-media); }
+.produto__adv{
+  font-size:.68rem; line-height:1.35; font-weight:600; text-transform:uppercase; letter-spacing:.02em;
+  color:var(--tinta-media); border-top:1px solid var(--linha); padding-top:6px; margin-top:2px;
+}
+.aviso--receita{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
+.aviso--receita p{ margin:0; flex:1 1 260px; }
+.aviso--receita + .aviso{ margin-top:12px; }
 .produto__base{
   margin-top:auto; padding-top:14px;
   display:flex; align-items:center; justify-content:space-between; gap:10px;

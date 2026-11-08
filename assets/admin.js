@@ -184,12 +184,13 @@ function desenharProdutos() {
 
   alvo.innerHTML = achados.map((p) => {
     const preco = p.selo === "receita"
-      ? "Sob receita — sem preço público"
+      ? "Com receita — fora do site"
       : (p.preco === null || p.preco === undefined || p.preco === ""
           ? "Consultar valor" : moeda.format(Number(p.preco)));
-    const selos = { top: "Mais pedido", promo: "Oferta", receita: "Só com receita" };
+    const selos = { top: "Mais pedido", promo: "Oferta" };
     const meta = [p.categoria, preco, "pos. " + p.ordem]
-      .concat(p.selo ? [selos[p.selo]] : [])
+      .concat(p.medicamento && p.selo !== "receita" ? ["medicamento sem receita"] : [])
+      .concat(selos[p.selo] ? [selos[p.selo]] : [])
       .concat(p.ativo ? [] : ["escondido"]);
 
     return '' +
@@ -279,13 +280,14 @@ function abrirModalProduto(p) {
   f.preco.value = (p?.preco ?? "") === null ? "" : (p?.preco ?? "");
   f.categoria.value = p?.categoria || estado.categorias[0]?.nome || "";
   f.arte.value = p?.arte || "caixa";
-  f.selo.value = p?.selo || "";
+  f.tipo.value = tipoDo(p);
+  f.selo.value = p?.selo === "receita" ? "" : (p?.selo || "");
   f.ordem.value = p?.ordem ?? proximaPosicao(estado.produtos);
   f.ativo.checked = p ? !!p.ativo : true;
 
   $("#fotoAtual").hidden = !estado.fotoAtual;
   if (estado.fotoAtual) $("#fotoPrevia").src = estado.fotoAtual;
-  ajustarPrecoPorSelo();
+  ajustarPorTipo();
 
   abrirModal("#modalProduto");
   f.nome.focus();
@@ -306,20 +308,38 @@ $("#btNovoProduto").addEventListener("click", () => {
   abrirModalProduto(null);
 });
 
-/* Medicamento de tarja nao pode ter preco divulgado ao publico. O banco
-   recusa (constraint farmacia_produtos_tarja_sem_preco), entao aqui o
-   campo se tranca sozinho em vez de deixar o dono digitar e tomar erro
-   so na hora de salvar. */
-function ajustarPrecoPorSelo() {
+/* O tipo decide o que a lei deixa mostrar:
+   - produto: aparece normal;
+   - medicamento sem receita: aparece, com a advertência da RDC 96/2008;
+   - com receita: fica só no painel. O servidor não entrega nome, preço nem
+     foto ao público (propaganda de medicamento sob prescrição é vedada ao
+     público leigo -- Lei 9.294/96, art. 7º);
+   - controlado: não entra. Portaria 344/98 e RDC 44/2009 vedam oferecer
+     controlado pela internet, e não há motivo para ele morar no catálogo.
+   No banco, "com receita" continua sendo selo = 'receita'. */
+const tipoDo = (p) => (p?.selo === "receita" ? "receita" : p?.medicamento ? "mip" : "produto");
+
+const DICAS_TIPO = {
+  receita: "Fica só aqui no painel: o site não mostra nome, preço nem foto. O cliente pede pelo WhatsApp.",
+  controlado: "Controlado não pode ser oferecido pela internet. Não cadastre: atenda pelo balcão ou WhatsApp.",
+  mip: "Aparece no site com a advertência obrigatória: “é um medicamento, seu uso pode trazer riscos…”.",
+};
+
+function ajustarPorTipo() {
   const f = $("#formProduto");
-  const tarja = f.selo.value === "receita";
-  f.preco.disabled = tarja;
-  if (tarja) f.preco.value = "";
-  f.preco.placeholder = tarja
-    ? "Sem preço público (item sob receita)"
-    : "8.90";
+  const tipo = f.tipo.value;
+  const semPreco = tipo === "receita" || tipo === "controlado";
+  f.preco.disabled = semPreco;
+  if (semPreco) f.preco.value = "";
+  f.preco.placeholder = semPreco ? "Sem preço público" : "8.90";
+  f.selo.disabled = semPreco;
+  if (semPreco) f.selo.value = "";
+  const dica = $("#dicaTipo");
+  dica.textContent = DICAS_TIPO[tipo] || "";
+  dica.hidden = !DICAS_TIPO[tipo];
+  $("#btSalvarProduto").disabled = tipo === "controlado";
 }
-$('#formProduto [name="selo"]').addEventListener("change", ajustarPrecoPorSelo);
+$('#formProduto [name="tipo"]').addEventListener("change", ajustarPorTipo);
 
 $("#btTirarFoto").addEventListener("click", () => {
   estado.fotoAtual = "";
@@ -335,6 +355,9 @@ $("#formProduto").addEventListener("submit", async (ev) => {
   $("#erroProduto").hidden = true;
 
   try {
+    // antes do upload: controlado não entra, nem a foto dele
+    const tipo = f.tipo.value;
+    if (tipo === "controlado") throw new Error(DICAS_TIPO.controlado);
     let foto = estado.fotoAtual;
     const arquivo = f.arquivo.files[0];
     if (arquivo) {
@@ -342,13 +365,15 @@ $("#formProduto").addEventListener("submit", async (ev) => {
       foto = await enviarFoto(arquivo);
     }
 
+    const receita = tipo === "receita";
     const dados = {
       nome: f.nome.value.trim(),
       spec: f.spec.value.trim(),
-      preco: (f.selo.value === "receita" || f.preco.value === "") ? null : Number(f.preco.value),
+      preco: (receita || f.preco.value === "") ? null : Number(f.preco.value),
       categoria: f.categoria.value,
       arte: f.arte.value,
-      selo: f.selo.value || null,
+      selo: receita ? "receita" : (f.selo.value || null),
+      medicamento: tipo !== "produto",
       foto: foto || "",
       ordem: Number(f.ordem.value) || 0,
       ativo: f.ativo.checked,

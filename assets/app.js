@@ -119,6 +119,15 @@ function figura(p) {
   return ARTES[p.arte] || ARTES.caixa;
 }
 
+/* Advertência obrigatória da RDC 96/2008 em todo medicamento divulgado (só
+   os sem receita chegam aqui). Vai com o nome do produto, como a norma
+   pede. */
+function advertencia(p) {
+  if (!p.medicamento) return "";
+  return '<p class="produto__adv">' + escapar(p.nome) +
+    " é um medicamento. Seu uso pode trazer riscos. Procure o médico e o farmacêutico. Leia a bula.</p>";
+}
+
 function cartao(p) {
   var selos = {
     promo: '<span class="selo selo--promo">Oferta</span>',
@@ -138,6 +147,7 @@ function cartao(p) {
         '<p class="produto__cat">' + escapar(p.categoria) + "</p>" +
         '<h3 class="produto__nome">' + escapar(p.nome) + "</h3>" +
         '<p class="produto__spec">' + escapar(p.spec) + "</p>" +
+        advertencia(p) +
         '<div class="produto__base">' +
           '<span class="preco">' + preco + "</span>" +
           '<button class="add" type="button" data-add="' + escapar(p.id) +
@@ -500,7 +510,10 @@ async function iniciar() {
 
   estado.loja = loja;
   estado.categorias = cat.categorias;
-  estado.itens = prod.produtos;
+  /* O servidor já não entrega item de receita; a tela não confia e tira de
+     novo, para o caso de algum dia vir por outro caminho (reserva do
+     config.js, cache antigo). */
+  estado.itens = prod.produtos.filter(function (p) { return !tarja(p); });
 
   limparOrfaos();
   aplicarLoja();

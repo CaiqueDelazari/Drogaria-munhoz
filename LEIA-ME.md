@@ -16,6 +16,7 @@ privacidade.html        Política de Privacidade (LGPD)
 termos.html             Termos de Uso
 admin.html              painel do lojista (login + cadastro)
 banco/schema.sql        estrutura do banco (Postgres da VPS)
+banco/002-medicamento.sql  coluna `medicamento` (rodar uma vez em produção)
 supabase.sql            OBSOLETO: como o banco era no Supabase, só histórico
 limpar-exemplos.sql     apaga catálogo de exemplo (só se rodou a versão antiga)
 vercel.json             cabeçalhos de segurança da hospedagem
@@ -116,11 +117,27 @@ plataformas e ainda responde à ANVISA e ao CRF, então isso não é opcional.
   Tag cadastrados, o banner nem aparece — não há o que consentir.
 - **Pixel do Meta e Google Tag** entram só pelo ID cadastrado no painel, nunca
   no código. O clique no WhatsApp já vai como evento de conversão.
-- **Medicamento de tarja não mostra preço.** Item com selo "Só com receita"
-  aparece como "Sob receita — consulte no balcão", no card, na lista e na
-  mensagem do WhatsApp. O banco também barra
-  (`farmacia_produtos_tarja_sem_preco`), e no painel o campo de preço se
-  tranca sozinho quando o selo é marcado.
+- **Remédio com receita não aparece no site.** No painel, o campo **Tipo**
+  separa quatro casos:
+
+  | Tipo | No site |
+  |------|---------|
+  | Produto (higiene, beleza…) | aparece normal |
+  | Medicamento sem receita | aparece, com a advertência da RDC 96/2008 ("… é um medicamento. Seu uso pode trazer riscos. Procure o médico e o farmacêutico. Leia a bula.") |
+  | Medicamento com receita | **não aparece**: nem nome, nem preço, nem foto. Fica só no painel |
+  | Controlado | o painel não deixa cadastrar |
+
+  A regra está no servidor (`VISIVEL_AO_PUBLICO`), não só na tela: a API
+  pública não entrega o item, e `/uploads/produtos/...` devolve 404 para a
+  foto de produto de receita ou escondido — link antigo, compartilhado ou
+  indexado não abre. A lista completa (`?incluirInativos=1`) exige sessão.
+  No banco, "com receita" é `selo = 'receita'`, sem preço
+  (`produtos_tarja_sem_preco`) e sempre `medicamento`
+  (`produtos_receita_e_medicamento`). No lugar dos itens, o catálogo mostra
+  o aviso "Medicamentos com receita… envie a receita no WhatsApp".
+  Base: Lei 9.294/96, art. 7º, e RDC 96/2008 (propaganda de medicamento sob
+  prescrição só para profissionais); Portaria 344/98 e RDC 44/2009
+  (controlado não é oferecido por meio remoto).
 - **Rodapé com os dados obrigatórios** (razão social, CNPJ, farmacêutico
   responsável + CRF, AFE e licença sanitária). Enquanto um dado não for
   preenchido, **a linha some** — nunca aparece campo em branco nem número
@@ -128,11 +145,10 @@ plataformas e ainda responde à ANVISA e ao CRF, então isso não é opcional.
 - **Checklist no painel** (aba "Dados da loja") mostrando exatamente o que
   ainda falta para poder anunciar.
 
-**Leitura mais rigorosa das normas:** RDC 96/2008 chega a vedar a divulgação
-de medicamento de tarja ao público leigo, e não só do preço. O site esconde o
-preço, mas o item continua visível no catálogo. Se o farmacêutico responsável
-preferir o caminho mais seguro, é só marcar esses itens como **"Esconder"** no
-painel — essa decisão é dele.
+**O que o código não automatiza:** a RDC 96 pede advertências extras para
+algumas substâncias (ácido acetilsalicílico, dipirona, entre outras). Se a
+loja divulgar esses itens, a advertência específica vai na linha técnica do
+produto. Vale o farmacêutico responsável conferir.
 
 > Os textos de privacidade e termos descrevem com precisão o que este site faz
 > hoje, mas **não substituem revisão de advogado**. Vale o cliente dar uma
@@ -147,7 +163,8 @@ painel — essa decisão é dele.
   dados (LGPD). Todos se preenchem no painel, aba "Dados da loja".
 - **Categorias e produtos**: o banco entrega vazio. A loja cria as abas na
   aba Categorias e cadastra o estoque real na aba Produtos, com os preços
-  que ela pratica. Item marcado como "Só com receita" não leva preço.
+  que ela pratica. Item do tipo "Medicamento com receita" não leva preço e
+  não aparece no site.
 - **Logo em alta**: a logo está redesenhada em SVG (fica nítida em qualquer
   tamanho). Se o cliente tiver o arquivo original, dá pra trocar pelos blocos
   `<svg>` marcados com `marca__selo` no `index.html`.

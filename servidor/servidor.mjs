@@ -45,6 +45,9 @@ const erro = (res, e) => {
   if (e?.code === '23514' && String(e.constraint).includes('tarja_sem_preco')) {
     return res.status(400).json({ erro: 'Medicamento com selo de receita não pode ter preço público.' });
   }
+  if (e?.code === '23514' && String(e.constraint).includes('receita_e_medicamento')) {
+    return res.status(400).json({ erro: 'Item com receita precisa estar marcado como medicamento.' });
+  }
   if (e?.code === '23514') return res.status(400).json({ erro: 'Valor fora do permitido para este campo.' });
   if (e?.code === '23505') return res.status(409).json({ erro: 'Já existe um registro com esse nome.' });
   return res.status(500).json({ erro: 'Erro interno' });
@@ -176,13 +179,30 @@ app.put('/api/loja', exigirAdmin(async (req, res) => {
 }));
 
 // ----------------------------------------------------------------- produtos
-const CAMPOS_PRODUTO = ['nome', 'spec', 'preco', 'categoria', 'arte', 'selo', 'foto', 'ativo', 'ordem'];
+const CAMPOS_PRODUTO = ['nome', 'spec', 'preco', 'categoria', 'arte', 'selo', 'foto', 'medicamento', 'ativo', 'ordem'];
+
+/**
+ * O que o público pode ver: produto ativo e que NÃO seja de receita.
+ *
+ * Medicamento sob prescrição não pode ser divulgado ao público leigo (Lei
+ * 9.294/96, art. 7º; RDC 96/2008). Esconder o preço não basta: nome e foto da
+ * embalagem num catálogo aberto já são propaganda. Por isso o filtro fica
+ * aqui, e não só na tela -- quem abre a API direto também não vê o item.
+ * A mesma regra decide quais fotos saem em /uploads.
+ */
+const VISIVEL_AO_PUBLICO = `ativo and selo is distinct from 'receita'`;
 
 app.get('/api/produtos', publico(async (req, res) => {
+  // A lista completa (escondidos e de receita) é do painel, e só dele. Antes
+  // `?incluirInativos=1` era aberto a qualquer um.
   const todos = req.query.incluirInativos === '1';
+  if (todos && !(await adminDaSessao(req))) {
+    return res.status(401).json({ erro: 'Entre no painel para fazer isso' });
+  }
   const { rows } = await pool.query(
-    `select * from produtos ${todos ? '' : 'where ativo'} order by ordem asc, nome asc`
+    `select * from produtos ${todos ? '' : `where ${VISIVEL_AO_PUBLICO}`} order by ordem asc, nome asc`
   );
+  res.setHeader('Cache-Control', 'no-store');
   res.json(rows);
 }));
 
@@ -371,17 +391,52 @@ app.delete('/api/foto', exigirAdmin(async (req, res) => {
   res.json({ ok: true });
 }));
 
-app.use('/uploads', express.static(PASTA_FOTOS, {
-  maxAge: '30d',
-  immutable: true,
-  setHeaders: (res, arquivo) => {
-    const ext = path.extname(arquivo).slice(1).toLowerCase();
-    if (TIPOS[ext]) res.setHeader('Content-Type', TIPOS[ext]);
-  },
+/**
+ * Foto só sai se o produto dono dela puder ser visto pelo público.
+ *
+ * Antes a pasta era servida inteira: esconder o produto tirava o card do
+ * site, mas a foto continuava abrindo para quem tivesse o link (Google,
+ * WhatsApp encaminhado, histórico). A embalagem de um remédio de receita
+ * identifica o produto tanto quanto o nome, então a regra é a mesma da API.
+ *
+ * O painel vê tudo: inclusive a foto recém-enviada que ainda não foi salva
+ * em produto nenhum.
+ */
+app.get('/uploads/produtos/:nome', publico(async (req, res) => {
+  const nome = path.basename(req.params.nome);
+  const ext = path.extname(nome).slice(1).toLowerCase();
+  if (nome !== req.params.nome || !TIPOS[ext]) return res.status(404).end();
+
+  const admin = await adminDaSessao(req);
+  if (!admin) {
+    const sufixo = `/uploads/produtos/${nome}`;
+    const { rowCount } = await pool.query(
+      `select 1 from produtos
+        where ${VISIVEL_AO_PUBLICO}
+          and right(split_part(foto, '?', 1), length($1)) = $1
+        limit 1`,
+      [sufixo]
+    );
+    if (!rowCount) return res.status(404).end();
+  }
+
+  res.setHeader('Content-Type', TIPOS[ext]);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Cache curto: esconder um produto precisa valer no mesmo dia, não em 30.
+  res.setHeader('Cache-Control', admin ? 'private, no-store' : 'public, max-age=3600');
+  res.sendFile(path.join(PASTA_FOTOS, 'produtos', nome), (e) => {
+    if (e && !res.headersSent) res.status(404).end();
+  });
 }));
+
+// Qualquer outro caminho em /uploads não existe para fora.
+app.use('/uploads', (_req, res) => res.status(404).end());
 
 // --------------------------------------------------------------------- site
 app.get('/saude', (_req, res) => res.json({ ok: true }));
+// A raiz do site é /app, que também guarda o servidor (código, schema,
+// node_modules). Só as páginas e os assets são do público.
+app.use('/servidor', (_req, res) => res.status(404).end());
 app.use(express.static(RAIZ_SITE, { extensions: ['html'] }));
 
 app.listen(PORTA, () => {
