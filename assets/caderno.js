@@ -260,8 +260,14 @@ async function imprimirNotinha() {
   const html = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Notinha</title><style>' +
     // Margem ZERO de propósito: sem espaço de margem o Chrome não imprime o
     // cabeçalho dele (data, título, endereço). O respiro vem do padding.
-    // A altura da página é medida e fixada na hora de imprimir (ver abaixo).
-    "@page{ size:80mm 200mm; margin:0; }" +
+    // SEM `size`: o driver da Elgin i9 só aceita os papéis da lista dele, e
+    // um tamanho pedido pela página que não está lá faz o Chrome encolher a
+    // notinha inteira para caber no papel escolhido (saiu minúscula na
+    // bobina). Sem `size`, ela segue o papel do diálogo em tamanho normal.
+    // No balcão o papel é "80 x 3276mm": o modo bobina contínua da Elgin,
+    // que avança só até o fim do texto.
+    "@page{ margin:0; }" +
+    "tr, .ass{ break-inside:avoid; }" +
     "*{ box-sizing:border-box; }" +
     "html,body{ margin:0; }" +
     "body{ width:72mm; margin:0 auto; padding:2mm 0 4mm; font:600 13px/1.3 Arial, Helvetica, sans-serif; color:#000; }" +
@@ -298,19 +304,9 @@ async function imprimirNotinha() {
   const quadro = document.createElement("iframe");
   quadro.id = "quadroNotinha";
   quadro.setAttribute("aria-hidden", "true");
-  // Largura real da bobina (fora da tela) para a medida de altura sair certa.
   quadro.style.cssText = "position:fixed; left:-10000px; top:0; width:80mm; height:10px; border:0;";
   quadro.srcdoc = html;
   quadro.onload = () => {
-    /* Bobina não tem fim de página: com `size: 80mm auto` o Chrome cai no
-       tamanho padrão do papel e a impressora puxa um palmo de papel em
-       branco. Por isso a página ganha exatamente a altura do conteúdo. */
-    const doc = quadro.contentDocument;
-    const alturaMm = Math.ceil(doc.body.getBoundingClientRect().height * 25.4 / 96) + 3;
-    const regra = doc.createElement("style");
-    regra.textContent = "@page{ size:80mm " + alturaMm + "mm; margin:0; }";
-    doc.head.appendChild(regra);
-    quadro.dataset.alturaMm = String(alturaMm);
     quadro.contentWindow.focus();
     quadro.contentWindow.print();
   };
