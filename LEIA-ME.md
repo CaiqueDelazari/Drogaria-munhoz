@@ -17,6 +17,7 @@ termos.html             Termos de Uso
 admin.html              painel do lojista (login + cadastro)
 banco/schema.sql        estrutura do banco (Postgres da VPS)
 banco/002-medicamento.sql  coluna `medicamento` (rodar uma vez em produção)
+banco/003-fiado-e-pedidos.sql  tabelas do fiado e dos pedidos (idem)
 supabase.sql            OBSOLETO: como o banco era no Supabase, só histórico
 limpar-exemplos.sql     apaga catálogo de exemplo (só se rodou a versão antiga)
 vercel.json             cabeçalhos de segurança da hospedagem
@@ -28,7 +29,8 @@ assets/banco.js         conversa com a API do próprio site (catálogo e admin)
 assets/dados-loja.js    joga os dados da loja nas páginas (site e documentos)
 assets/rastreio.js      banner de cookies + Pixel/Google Tag
 assets/app.js           comportamento do site
-assets/admin.js         comportamento do painel
+assets/admin.js         comportamento do painel (catálogo e loja)
+assets/caderno.js       abas Devedores e Pedidos do painel
 assets/legal.js         preenche a privacidade e os termos
 assets/artes.js         desenhos SVG dos produtos e ícones dos serviços
 assets/styles.css       visual (cores, tipografia, layout)
@@ -63,10 +65,20 @@ serviços do balcão e os dados da loja.
 
 | Aba | O que muda |
 |-----|------------|
-| **Produtos** | Nome, linha técnica, preço, categoria, foto ou desenho, selo (Oferta / Mais pedido / Só com receita), posição e se aparece no catálogo |
+| **Produtos** | Nome, tipo (produto / sem receita / com receita), linha técnica, preço, categoria, foto ou desenho, selo (Oferta / Mais pedido), posição e se aparece no catálogo |
 | **Categorias** | As abas que aparecem em cima do catálogo — criar, renomear, reordenar, apagar |
 | **Serviços** | Os quadros da seção "Serviços do balcão" |
 | **Dados da loja** | WhatsApp, telefone, endereço, horário, Instagram, mapa e o aviso legal — muda no site inteiro de uma vez |
+| **Devedores** | O fiado: cada cliente tem uma comanda com o que levou (texto livre + valor, sem ligação com o catálogo). Recebe parte ou tudo, e o saldo se atualiza. Manda o extrato no WhatsApp do cliente |
+| **Pedidos** | Lista do que precisa pedir (ao fornecedor ou para um cliente), com "ainda não feito" / "feito em ...". A aba mostra quantos faltam |
+
+**Devedores e Pedidos não aparecem no site.** São do balcão: o servidor exige
+login até para ler (`/api/devedores`, `/api/lancamentos`, `/api/pedidos`), porque
+têm nome, telefone e dívida de cliente. Regras do fiado, garantidas no servidor:
+pagamento não passa do que o cliente deve (dois cliques em "Receber" não
+abatem duas vezes), e apagar um item que deixaria o pagamento maior que a
+dívida é recusado -- apague o pagamento antes. Apagar anotação é para corrigir
+erro; apagar o cliente apaga a conta inteira.
 
 Detalhes úteis:
 

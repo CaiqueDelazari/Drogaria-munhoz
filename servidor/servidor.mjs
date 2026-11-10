@@ -49,6 +49,8 @@ const erro = (res, e) => {
     return res.status(400).json({ erro: 'Item com receita precisa estar marcado como medicamento.' });
   }
   if (e?.code === '23514') return res.status(400).json({ erro: 'Valor fora do permitido para este campo.' });
+  // id que não é uuid: para quem chamou, é só um registro que não existe
+  if (e?.code === '22P02') return res.status(404).json({ erro: 'Registro não encontrado' });
   if (e?.code === '23505') return res.status(409).json({ erro: 'Já existe um registro com esse nome.' });
   return res.status(500).json({ erro: 'Erro interno' });
 };
@@ -341,6 +343,224 @@ app.put('/api/servicos/:id', exigirAdmin(async (req, res) => {
 app.delete('/api/servicos/:id', exigirAdmin(async (req, res) => {
   const { rowCount } = await pool.query('delete from servicos where id = $1', [req.params.id]);
   if (!rowCount) return naoAchou(res, 'Serviço');
+  res.json({ ok: true });
+}));
+
+// ------------------------------------------------------- caderno do balcão
+/*
+ * Fiado e pedidos são anotação interna da loja, com nome e telefone de
+ * cliente e quanto ele deve. Diferente do catálogo, aqui ATÉ A LEITURA exige
+ * administrador: toda rota abaixo passa por `exigirAdmin`.
+ */
+
+/** "1.234,50", "12,50", "12.5" ou 12.5 -> número. null se não for um valor > 0. */
+function valorEmReais(bruto) {
+  let t = String(bruto ?? '').trim().replace(/\s|R\$/g, '');
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  const n = Number(t);
+  if (!Number.isFinite(n) || n <= 0 || n > 1_000_000) return null;
+  return Math.round(n * 100) / 100;
+}
+
+const SALDO_POR_DEVEDOR = `
+  select d.*,
+         coalesce(sum(l.valor) filter (where l.tipo = 'compra'), 0)    as total_compras,
+         coalesce(sum(l.valor) filter (where l.tipo = 'pagamento'), 0) as total_pago,
+         coalesce(sum(case when l.tipo = 'compra' then l.valor else -l.valor end), 0) as saldo,
+         max(l.criado_em) as ultimo_movimento
+    from devedores d
+    left join fiado_lancamentos l on l.devedor_id = d.id`;
+
+const semCache = (res) => res.setHeader('Cache-Control', 'no-store');
+
+app.get('/api/devedores', exigirAdmin(async (_req, res) => {
+  const { rows } = await pool.query(
+    `${SALDO_POR_DEVEDOR} group by d.id order by saldo desc, d.nome asc`
+  );
+  semCache(res);
+  res.json(rows);
+}));
+
+app.post('/api/devedores', exigirAdmin(async (req, res) => {
+  const nome = String(req.body?.nome ?? '').trim();
+  if (!nome) return res.status(400).json({ erro: 'Informe o nome do cliente' });
+  const { rows } = await pool.query(
+    'insert into devedores (nome, telefone, obs) values ($1, $2, $3) returning *',
+    [nome, String(req.body?.telefone ?? '').replace(/\D/g, ''), String(req.body?.obs ?? '').trim()]
+  );
+  res.status(201).json(rows[0]);
+}));
+
+app.put('/api/devedores/:id', exigirAdmin(async (req, res) => {
+  const nome = String(req.body?.nome ?? '').trim();
+  if (!nome) return res.status(400).json({ erro: 'Informe o nome do cliente' });
+  const { rowCount } = await pool.query(
+    'update devedores set nome = $1, telefone = $2, obs = $3 where id = $4',
+    [nome, String(req.body?.telefone ?? '').replace(/\D/g, ''), String(req.body?.obs ?? '').trim(), req.params.id]
+  );
+  if (!rowCount) return naoAchou(res, 'Cliente');
+  res.json({ ok: true });
+}));
+
+app.delete('/api/devedores/:id', exigirAdmin(async (req, res) => {
+  const { rowCount } = await pool.query('delete from devedores where id = $1', [req.params.id]);
+  if (!rowCount) return naoAchou(res, 'Cliente');
+  res.json({ ok: true });
+}));
+
+app.get('/api/devedores/:id/lancamentos', exigirAdmin(async (req, res) => {
+  const { rows } = await pool.query(
+    'select * from fiado_lancamentos where devedor_id = $1 order by criado_em asc',
+    [req.params.id]
+  );
+  semCache(res);
+  res.json(rows);
+}));
+
+/**
+ * Anota um item na comanda ou recebe um pagamento.
+ *
+ * Pagamento não pode passar do que o cliente deve: troco não é crédito, e
+ * saldo negativo no caderno só confunde. A conferência é feita com o
+ * cliente travado (`for update`), para dois cliques seguidos não abaterem
+ * o mesmo saldo duas vezes.
+ */
+async function lancar(req, res, tipo) {
+  const valor = valorEmReais(req.body?.valor);
+  if (valor === null) return res.status(400).json({ erro: 'Informe um valor maior que zero' });
+  const descricao = String(req.body?.descricao ?? '').trim();
+  if (tipo === 'compra' && !descricao) return res.status(400).json({ erro: 'Escreva o que o cliente levou' });
+
+  const cliente = await pool.connect();
+  try {
+    await cliente.query('begin');
+    const dono = await cliente.query('select id from devedores where id = $1 for update', [req.params.id]);
+    if (!dono.rowCount) {
+      await cliente.query('rollback');
+      return naoAchou(res, 'Cliente');
+    }
+    if (tipo === 'pagamento') {
+      const { rows } = await cliente.query(
+        `select coalesce(sum(case when tipo = 'compra' then valor else -valor end), 0) as saldo
+           from fiado_lancamentos where devedor_id = $1`,
+        [req.params.id]
+      );
+      const saldo = Number(rows[0].saldo);
+      if (valor > saldo) {
+        await cliente.query('rollback');
+        return res.status(400).json({
+          erro: saldo > 0
+            ? `O cliente deve ${saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}. O pagamento não pode passar disso.`
+            : 'Este cliente não está devendo nada.',
+        });
+      }
+    }
+    const { rows } = await cliente.query(
+      `insert into fiado_lancamentos (devedor_id, tipo, descricao, valor)
+       values ($1, $2, $3, $4) returning *`,
+      [req.params.id, tipo, descricao, valor]
+    );
+    await cliente.query('commit');
+    res.status(201).json(rows[0]);
+  } catch (e) {
+    await cliente.query('rollback');
+    throw e;
+  } finally {
+    cliente.release();
+  }
+}
+
+app.post('/api/devedores/:id/compras', exigirAdmin((req, res) => lancar(req, res, 'compra')));
+app.post('/api/devedores/:id/pagamentos', exigirAdmin((req, res) => lancar(req, res, 'pagamento')));
+
+/**
+ * Apagar serve para corrigir anotação errada. Item de compra só sai se o
+ * saldo continuar >= 0 sem ele -- senão sobraria pagamento a mais que a
+ * dívida, e o certo é apagar o pagamento antes.
+ */
+app.delete('/api/lancamentos/:id', exigirAdmin(async (req, res) => {
+  const cliente = await pool.connect();
+  try {
+    await cliente.query('begin');
+    const atual = await cliente.query('select * from fiado_lancamentos where id = $1', [req.params.id]);
+    if (!atual.rowCount) {
+      await cliente.query('rollback');
+      return naoAchou(res, 'Lançamento');
+    }
+    const l = atual.rows[0];
+    await cliente.query('select id from devedores where id = $1 for update', [l.devedor_id]);
+    await cliente.query('delete from fiado_lancamentos where id = $1', [l.id]);
+    const { rows } = await cliente.query(
+      `select coalesce(sum(case when tipo = 'compra' then valor else -valor end), 0) as saldo
+         from fiado_lancamentos where devedor_id = $1`,
+      [l.devedor_id]
+    );
+    if (Number(rows[0].saldo) < 0) {
+      await cliente.query('rollback');
+      return res.status(400).json({ erro: 'Sem esse item o pagamento passaria da dívida. Apague o pagamento primeiro.' });
+    }
+    await cliente.query('commit');
+    res.json({ ok: true });
+  } catch (e) {
+    await cliente.query('rollback');
+    throw e;
+  } finally {
+    cliente.release();
+  }
+}));
+
+// ---- pedidos
+app.get('/api/pedidos', exigirAdmin(async (_req, res) => {
+  const { rows } = await pool.query(
+    // os que faltam fazer primeiro (mais antigos no topo); depois os feitos, do mais recente
+    `select * from pedidos
+      order by (feito_em is not null), case when feito_em is null then criado_em end asc,
+               feito_em desc`
+  );
+  semCache(res);
+  res.json(rows);
+}));
+
+app.post('/api/pedidos', exigirAdmin(async (req, res) => {
+  const texto = String(req.body?.texto ?? '').trim();
+  if (!texto) return res.status(400).json({ erro: 'Escreva o que é para pedir' });
+  const { rows } = await pool.query(
+    'insert into pedidos (texto, para_quem) values ($1, $2) returning *',
+    [texto, String(req.body?.para_quem ?? '').trim()]
+  );
+  res.status(201).json(rows[0]);
+}));
+
+/** Edita o texto e/ou marca feito (`feito: true` grava agora; `false` desfaz). */
+app.put('/api/pedidos/:id', exigirAdmin(async (req, res) => {
+  const sets = [];
+  const valores = [];
+  if ('texto' in (req.body ?? {})) {
+    const texto = String(req.body.texto ?? '').trim();
+    if (!texto) return res.status(400).json({ erro: 'Escreva o que é para pedir' });
+    valores.push(texto);
+    sets.push(`texto = $${valores.length}`);
+  }
+  if ('para_quem' in (req.body ?? {})) {
+    valores.push(String(req.body.para_quem ?? '').trim());
+    sets.push(`para_quem = $${valores.length}`);
+  }
+  if ('feito' in (req.body ?? {})) {
+    sets.push(req.body.feito ? 'feito_em = coalesce(feito_em, now())' : 'feito_em = null');
+  }
+  if (!sets.length) return res.json({ ok: true });
+  valores.push(req.params.id);
+  const { rows } = await pool.query(
+    `update pedidos set ${sets.join(', ')} where id = $${valores.length} returning *`,
+    valores
+  );
+  if (!rows.length) return naoAchou(res, 'Pedido');
+  res.json(rows[0]);
+}));
+
+app.delete('/api/pedidos/:id', exigirAdmin(async (req, res) => {
+  const { rowCount } = await pool.query('delete from pedidos where id = $1', [req.params.id]);
+  if (!rowCount) return naoAchou(res, 'Pedido');
   res.json({ ok: true });
 }));
 

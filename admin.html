@@ -145,6 +145,63 @@
   .checa li[data-ok="false"] .checa__marca{ background:var(--vermelho-claro); color:var(--vermelho); }
   .checa li[data-ok="false"]{ color:var(--tinta); font-weight:600; }
   .checa ul{ margin:0; padding:0; }
+
+  /* ---------- caderno: devedores e pedidos ---------- */
+  .contagem{ display:inline-grid; place-items:center; min-width:20px; height:20px; padding:0 6px;
+    border-radius:99px; background:var(--vermelho); color:#fff; font-size:.72rem; margin-left:4px; }
+  .bt--verde{ background:var(--verde); border-color:var(--verde); color:#fff; }
+  .bt--verde:hover{ filter:brightness(.92); }
+
+  .resumo{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; margin-bottom:16px; }
+  .resumo > div{ background:var(--branco); border:1px solid var(--linha); border-radius:var(--raio); padding:16px 18px; }
+  .resumo__rot{ display:block; font-size:.78rem; color:var(--tinta-fraca); font-weight:600; }
+  .resumo__num{ font-family:var(--mono); font-size:1.45rem; letter-spacing:-.02em; }
+
+  .devedor{ grid-template-columns:1fr auto; cursor:pointer; text-align:left; width:100%; font:inherit; color:inherit; }
+  .devedor:hover{ border-color:#CFD3D9; }
+  .devedor__saldo{ font-family:var(--mono); font-weight:600; font-size:1.05rem; text-align:right; }
+  .devedor__saldo small{ display:block; font-size:.68rem; font-weight:400; color:var(--tinta-fraca);
+    text-transform:uppercase; letter-spacing:.05em; }
+  .devedor[data-quitado="true"] .devedor__saldo{ color:var(--verde); }
+  .devedor:not([data-quitado="true"]) .devedor__saldo{ color:var(--vermelho); }
+
+  .dlg{ border:0; padding:24px; border-radius:var(--raio); box-shadow:var(--sombra-lg);
+    width:min(520px, calc(100% - 24px)); max-height:92vh; color:var(--tinta); }
+  .dlg--largo{ width:min(680px, calc(100% - 24px)); }
+  .dlg::backdrop{ background:rgba(20,21,24,.45); }
+  .dlg h2{ font-family:var(--display); font-size:1.25rem; margin:0 0 18px; }
+  .comanda__topo{ display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:14px; }
+  .comanda__saldo{ border-radius:var(--raio-sm); padding:14px 16px; margin-bottom:14px; font-weight:600;
+    background:var(--vermelho-claro); color:var(--vermelho-fundo); }
+  .comanda__saldo b{ font-family:var(--mono); font-size:1.5rem; display:block; }
+  .comanda__saldo[data-quitado="true"]{ background:var(--verde-claro); color:var(--verde); }
+  .comanda__linha{ display:grid; grid-template-columns:1fr 120px auto; gap:8px; margin-bottom:10px; }
+  #formPagamento.comanda__linha{ grid-template-columns:1fr auto auto; }
+  @media (max-width:520px){
+    .comanda__linha{ grid-template-columns:1fr 1fr; }
+    .comanda__linha > :first-child:not(.comanda__valor){ grid-column:1 / -1; }
+  }
+  .lanc{ display:grid; grid-template-columns:auto 1fr auto auto; gap:10px; align-items:center;
+    padding:9px 4px; border-bottom:1px solid var(--linha); font-size:.9rem; }
+  .lanc__data{ font-family:var(--mono); font-size:.74rem; color:var(--tinta-fraca); }
+  .lanc__valor{ font-family:var(--mono); font-weight:600; }
+  .lanc[data-tipo="pagamento"]{ color:var(--verde); }
+  .lanc__x{ border:0; background:none; color:var(--tinta-fraca); cursor:pointer; font-size:1rem; padding:2px 6px; }
+  .lanc__x:hover{ color:var(--vermelho); }
+
+  .chip{ font:inherit; font-size:.85rem; font-weight:600; border:1px solid var(--linha); background:var(--branco);
+    border-radius:99px; padding:7px 14px; cursor:pointer; color:var(--tinta-media); }
+  .chip[aria-pressed="true"]{ background:var(--carvao); border-color:var(--carvao); color:#fff; }
+
+  .pedido{ display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start;
+    padding:14px; border:1px solid var(--linha); border-left:4px solid #E0A100; border-radius:var(--raio-sm); background:var(--branco); }
+  .pedido + .pedido{ margin-top:8px; }
+  .pedido[data-feito="true"]{ border-left-color:var(--verde); }
+  .pedido__texto{ margin:6px 0 0; white-space:pre-wrap; font-weight:500; }
+  .pedido[data-feito="true"] .pedido__texto{ color:var(--tinta-media); }
+  .estado{ display:inline-block; font-size:.72rem; font-weight:700; border-radius:99px; padding:3px 10px;
+    background:#FFF4D6; color:#8A6100; }
+  .pedido[data-feito="true"] .estado{ background:var(--verde-claro); color:var(--verde); }
 </style>
 </head>
 <body>
@@ -204,7 +261,47 @@
       <button class="aba" role="tab" data-aba="categorias" aria-selected="false">Categorias</button>
       <button class="aba" role="tab" data-aba="servicos"   aria-selected="false">Serviços</button>
       <button class="aba" role="tab" data-aba="loja"       aria-selected="false">Dados da loja</button>
+      <button class="aba" role="tab" data-aba="fiado"      aria-selected="false">Devedores</button>
+      <button class="aba" role="tab" data-aba="pedidos"    aria-selected="false">Pedidos <span class="contagem" id="contaPedidos" hidden></span></button>
     </div>
+
+    <!-- ---- devedores (fiado) ---- -->
+    <section data-painel="fiado" hidden>
+      <div class="resumo">
+        <div><span class="resumo__rot">Total a receber</span><b class="resumo__num" id="totalFiado">R$ 0,00</b></div>
+        <div><span class="resumo__rot">Clientes devendo</span><b class="resumo__num" id="qtdDevendo">0</b></div>
+      </div>
+      <div class="barra">
+        <input type="search" id="buscaFiado" placeholder="Buscar cliente…" aria-label="Buscar cliente">
+        <button class="bt bt--solido" id="btNovoDevedor" type="button">+ Novo cliente</button>
+      </div>
+      <div id="listaDevedores"></div>
+    </section>
+
+    <!-- ---- pedidos ---- -->
+    <section data-painel="pedidos" hidden>
+      <div class="painel">
+        <h2>Novo pedido</h2>
+        <p class="olho-adm">Anote o que precisa pedir. Quando fizer o pedido, marque como feito.</p>
+        <form id="formPedido" style="display:grid; gap:12px">
+          <label class="campo">O que pedir
+            <textarea name="texto" required placeholder="Ex.: 2 cx dipirona 500, 1 fardo de fralda M"></textarea>
+          </label>
+          <div class="linha-2">
+            <label class="campo">Fornecedor ou cliente <span class="dica">opcional</span>
+              <input type="text" name="para_quem" placeholder="Ex.: distribuidora / D. Maria">
+            </label>
+            <div style="align-self:end"><button class="bt bt--solido" type="submit">Adicionar pedido</button></div>
+          </div>
+        </form>
+      </div>
+      <div class="barra" style="margin-top:18px" role="group" aria-label="Mostrar pedidos">
+        <button class="chip" type="button" data-filtro-pedido="falta" aria-pressed="true">Falta fazer</button>
+        <button class="chip" type="button" data-filtro-pedido="feito" aria-pressed="false">Feitos</button>
+        <button class="chip" type="button" data-filtro-pedido="todos" aria-pressed="false">Todos</button>
+      </div>
+      <div id="listaPedidos"></div>
+    </section>
 
     <!-- ---- produtos ---- -->
     <section data-painel="produtos">
@@ -422,6 +519,72 @@
   </form>
 </div>
 
+<!-- ================= CADERNO: cliente, comanda e pedido ================= -->
+<dialog class="dlg" id="dlgDevedor" aria-labelledby="tituloDevedor">
+  <h2 id="tituloDevedor">Novo cliente</h2>
+  <form id="formDevedor" style="display:grid; gap:13px">
+    <div class="recado" id="erroDevedor" hidden></div>
+    <label class="campo">Nome <input type="text" name="nome" required autocomplete="off"></label>
+    <label class="campo">WhatsApp <span class="dica">opcional · com DDD: 14 99999-9999</span>
+      <input type="tel" name="telefone" autocomplete="off">
+    </label>
+    <label class="campo">Observação <span class="dica">opcional</span><input type="text" name="obs" autocomplete="off"></label>
+    <div class="modal__base">
+      <button class="bt" type="button" data-fechar-dlg>Cancelar</button>
+      <button class="bt bt--solido" type="submit">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="dlg dlg--largo" id="dlgComanda" aria-labelledby="tituloComanda">
+  <div class="comanda__topo">
+    <div>
+      <h2 id="tituloComanda" style="margin:0"></h2>
+      <p class="fila__spec" id="infoComanda"></p>
+    </div>
+    <button class="bt bt--mini" type="button" data-fechar-dlg aria-label="Fechar">✕</button>
+  </div>
+
+  <div class="comanda__saldo" id="saldoComanda"></div>
+  <div class="recado" id="erroComanda" hidden></div>
+
+  <form class="comanda__linha" id="formCompra">
+    <input type="text" name="descricao" placeholder="O que levou" aria-label="O que levou" required autocomplete="off">
+    <input type="text" name="valor" placeholder="Valor" aria-label="Valor do item" inputmode="decimal" required autocomplete="off" class="comanda__valor">
+    <button class="bt bt--solido" type="submit">Anotar</button>
+  </form>
+
+  <form class="comanda__linha" id="formPagamento">
+    <input type="text" name="valor" placeholder="Valor pago" aria-label="Valor pago" inputmode="decimal" required autocomplete="off" class="comanda__valor">
+    <button class="bt" type="button" id="btPagarTudo">Pagar tudo</button>
+    <button class="bt bt--verde" type="submit">Receber</button>
+  </form>
+
+  <div id="listaLancamentos"></div>
+
+  <div class="modal__base" style="justify-content:space-between">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="bt bt--mini" type="button" id="btEditarDevedor">Editar cliente</button>
+      <button class="bt bt--mini bt--perigo" type="button" id="btApagarDevedor">Apagar cliente</button>
+    </div>
+    <a class="bt bt--mini" id="btZapComanda" target="_blank" rel="noopener" hidden>Mandar extrato no WhatsApp</a>
+  </div>
+</dialog>
+
+<dialog class="dlg" id="dlgPedido" aria-labelledby="tituloPedido">
+  <h2 id="tituloPedido">Editar pedido</h2>
+  <form id="formEditarPedido" style="display:grid; gap:13px">
+    <div class="recado" id="erroPedido" hidden></div>
+    <label class="campo">O que pedir <textarea name="texto" required></textarea></label>
+    <label class="campo">Fornecedor ou cliente <input type="text" name="para_quem"></label>
+    <div class="modal__base">
+      <button class="bt" type="button" data-fechar-dlg>Cancelar</button>
+      <button class="bt bt--solido" type="submit">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
 <script type="module" src="assets/admin.js"></script>
+<script type="module" src="assets/caderno.js"></script>
 </body>
 </html>
