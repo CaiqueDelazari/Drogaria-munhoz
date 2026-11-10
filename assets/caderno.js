@@ -283,7 +283,7 @@ async function imprimirNotinha() {
     (linhaLoja ? '<div class="c p">' + escapar(linhaLoja) + "</div>" : "") +
     (contato ? '<div class="c p">' + escapar(contato) + "</div>" : "") +
     "<hr>" +
-    '<div class="c"><b>' + (quitada ? "COMPROVANTE DE QUITAÇÃO" : "NOTA DE CONTA (FIADO)") + "</b></div>" +
+    '<div class="c"><b>' + (quitada ? "COMPROVANTE DE QUITAÇÃO" : "NOTA DE CONTA (A PRAZO)") + "</b></div>" +
     '<div class="c p">Não é documento fiscal</div>' +
     "<hr>" +
     "<div>Cliente: <b>" + escapar(d.nome) + "</b></div>" +
