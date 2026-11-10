@@ -258,16 +258,20 @@ async function imprimirNotinha() {
   }).join("");
 
   const html = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Notinha</title><style>' +
-    "@page{ size:80mm auto; margin:4mm; }" +
+    // Margem ZERO de propósito: sem espaço de margem o Chrome não imprime o
+    // cabeçalho dele (data, título, endereço). O respiro vem do padding.
+    // A altura da página é medida e fixada na hora de imprimir (ver abaixo).
+    "@page{ size:80mm 200mm; margin:0; }" +
     "*{ box-sizing:border-box; }" +
-    "body{ margin:0; width:72mm; font:12px/1.35 'Courier New', monospace; color:#000; }" +
-    "h1{ font-size:15px; margin:0; text-align:center; }" +
-    ".c{ text-align:center; } .p{ font-size:10.5px; }" +
-    "hr{ border:0; border-top:1px dashed #000; margin:6px 0; }" +
+    "html,body{ margin:0; }" +
+    "body{ width:72mm; margin:0 auto; padding:2mm 0 4mm; font:600 13px/1.3 Arial, Helvetica, sans-serif; color:#000; }" +
+    "h1{ font-size:17px; font-weight:800; margin:0; text-align:center; }" +
+    ".c{ text-align:center; } .p{ font-size:11.5px; }" +
+    "hr{ border:0; border-top:1.5px dashed #000; margin:5px 0; }" +
     "table{ width:100%; border-collapse:collapse; } td{ vertical-align:top; padding:2px 0; }" +
     "td:first-child{ width:11mm; white-space:nowrap; } .v{ text-align:right; white-space:nowrap; padding-left:4px; }" +
-    ".tot td{ font-weight:bold; font-size:14px; padding-top:4px; }" +
-    ".ass{ margin-top:12mm; border-top:1px solid #000; text-align:center; font-size:10.5px; padding-top:2px; }" +
+    ".tot td{ font-weight:800; font-size:16px; padding-top:4px; }" +
+    ".ass{ margin-top:10mm; border-top:1.5px solid #000; text-align:center; font-size:11.5px; padding-top:2px; }" +
     "</style></head><body>" +
     "<h1>" + escapar(loja.nome || "Drogaria Munhoz") + "</h1>" +
     (linhaLoja ? '<div class="c p">' + escapar(linhaLoja) + "</div>" : "") +
@@ -294,9 +298,19 @@ async function imprimirNotinha() {
   const quadro = document.createElement("iframe");
   quadro.id = "quadroNotinha";
   quadro.setAttribute("aria-hidden", "true");
-  quadro.style.cssText = "position:fixed; width:0; height:0; border:0; right:0; bottom:0;";
+  // Largura real da bobina (fora da tela) para a medida de altura sair certa.
+  quadro.style.cssText = "position:fixed; left:-10000px; top:0; width:80mm; height:10px; border:0;";
   quadro.srcdoc = html;
   quadro.onload = () => {
+    /* Bobina não tem fim de página: com `size: 80mm auto` o Chrome cai no
+       tamanho padrão do papel e a impressora puxa um palmo de papel em
+       branco. Por isso a página ganha exatamente a altura do conteúdo. */
+    const doc = quadro.contentDocument;
+    const alturaMm = Math.ceil(doc.body.getBoundingClientRect().height * 25.4 / 96) + 3;
+    const regra = doc.createElement("style");
+    regra.textContent = "@page{ size:80mm " + alturaMm + "mm; margin:0; }";
+    doc.head.appendChild(regra);
+    quadro.dataset.alturaMm = String(alturaMm);
     quadro.contentWindow.focus();
     quadro.contentWindow.print();
   };
