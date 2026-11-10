@@ -69,7 +69,7 @@ serviços do balcão e os dados da loja.
 | **Categorias** | As abas que aparecem em cima do catálogo — criar, renomear, reordenar, apagar |
 | **Serviços** | Os quadros da seção "Serviços do balcão" |
 | **Dados da loja** | WhatsApp, telefone, endereço, horário, Instagram, mapa e o aviso legal — muda no site inteiro de uma vez |
-| **Devedores** | O fiado: cada cliente tem uma comanda com o que levou (texto livre + valor, sem ligação com o catálogo). Recebe parte ou tudo, e o saldo se atualiza. Manda o extrato no WhatsApp do cliente |
+| **Devedores** | O fiado: cada cliente tem uma comanda com o que levou (texto livre + valor, sem ligação com o catálogo). Recebe parte ou tudo, e o saldo se atualiza. Manda o extrato no WhatsApp do cliente e imprime a notinha (bobina de 80 mm; quem está em dia sai com comprovante de quitação) |
 | **Pedidos** | Lista do que precisa pedir (ao fornecedor ou para um cliente), com "ainda não feito" / "feito em ...". A aba mostra quantos faltam |
 
 **Devedores e Pedidos não aparecem no site.** São do balcão: o servidor exige

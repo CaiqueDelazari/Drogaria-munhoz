@@ -197,16 +197,118 @@ function formatarTelefone(t) {
   return t;
 }
 
-/* Extrato pronto para mandar ao cliente: os itens desde o último momento em
-   que ele ficou em dia, o que já pagou desde então e o saldo. */
-function linkExtrato(d, saldo) {
+/* A "conta atual": os lançamentos desde o último momento em que o cliente
+   ficou em dia. É o que vai no extrato do WhatsApp e na notinha impressa --
+   o que ele já quitou antes não interessa mais a ninguém. */
+function contaAtual() {
   let inicio = 0;
   let acumulado = 0;
   fiado.lancamentos.forEach((l, i) => {
     acumulado += l.tipo === "compra" ? Number(l.valor) : -Number(l.valor);
     if (acumulado <= 0) inicio = i + 1;
   });
-  const linhas = fiado.lancamentos.slice(inicio).map((l) =>
+  return fiado.lancamentos.slice(inicio);
+}
+
+/* A última conta já quitada (para a notinha de quem está em dia servir de
+   comprovante de pagamento). */
+function ultimaContaQuitada() {
+  const zeros = [];
+  let acumulado = 0;
+  fiado.lancamentos.forEach((l, i) => {
+    acumulado += l.tipo === "compra" ? Number(l.valor) : -Number(l.valor);
+    if (acumulado <= 0) zeros.push(i + 1);
+  });
+  if (!zeros.length) return [];
+  const fim = zeros[zeros.length - 1];
+  const inicio = zeros.length > 1 ? zeros[zeros.length - 2] : 0;
+  return fiado.lancamentos.slice(inicio, fim);
+}
+
+/* ---- notinha impressa ----
+   Feita para impressora térmica de 80 mm (a de cupom do balcão), mas sai
+   legível numa impressora comum também: vira uma coluna estreita no topo
+   da folha. Imprime por um iframe escondido, sem abrir janela nova -- popup
+   costuma ser bloqueado. */
+let lojaDaNota = null;
+
+async function imprimirNotinha() {
+  const d = fiado.atual;
+  const saldo = Number(d.saldo);
+  const quitada = saldo <= 0;
+  const itens = quitada ? ultimaContaQuitada() : contaAtual();
+  if (!itens.length) return alert("Nada anotado para imprimir.");
+
+  if (!lojaDaNota) {
+    try { lojaDaNota = (await fetch("/api/loja").then((r) => r.json())) || {}; } catch { lojaDaNota = {}; }
+  }
+  const loja = lojaDaNota;
+  const linhaLoja = [loja.endereco, loja.cidade].filter(Boolean).join(" · ");
+  const contato = [loja.telefone, loja.cnpj && "CNPJ " + loja.cnpj].filter(Boolean).join(" · ");
+  const compras = itens.filter((l) => l.tipo === "compra").reduce((s, l) => s + Number(l.valor), 0);
+  const pago = itens.filter((l) => l.tipo === "pagamento").reduce((s, l) => s + Number(l.valor), 0);
+  const agora = new Date();
+
+  const linhas = itens.map((l) => {
+    const pagto = l.tipo === "pagamento";
+    return "<tr" + (pagto ? ' class="pg"' : "") + ">" +
+      "<td>" + dataCurta.format(new Date(l.criado_em)).slice(0, 5) + "</td>" +
+      "<td>" + (pagto ? "Pagamento" : escapar(l.descricao)) + "</td>" +
+      '<td class="v">' + (pagto ? "-" : "") + moeda.format(Number(l.valor)) + "</td></tr>";
+  }).join("");
+
+  const html = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Notinha</title><style>' +
+    "@page{ size:80mm auto; margin:4mm; }" +
+    "*{ box-sizing:border-box; }" +
+    "body{ margin:0; width:72mm; font:12px/1.35 'Courier New', monospace; color:#000; }" +
+    "h1{ font-size:15px; margin:0; text-align:center; }" +
+    ".c{ text-align:center; } .p{ font-size:10.5px; }" +
+    "hr{ border:0; border-top:1px dashed #000; margin:6px 0; }" +
+    "table{ width:100%; border-collapse:collapse; } td{ vertical-align:top; padding:2px 0; }" +
+    "td:first-child{ width:11mm; white-space:nowrap; } .v{ text-align:right; white-space:nowrap; padding-left:4px; }" +
+    ".tot td{ font-weight:bold; font-size:14px; padding-top:4px; }" +
+    ".ass{ margin-top:12mm; border-top:1px solid #000; text-align:center; font-size:10.5px; padding-top:2px; }" +
+    "</style></head><body>" +
+    "<h1>" + escapar(loja.nome || "Drogaria Munhoz") + "</h1>" +
+    (linhaLoja ? '<div class="c p">' + escapar(linhaLoja) + "</div>" : "") +
+    (contato ? '<div class="c p">' + escapar(contato) + "</div>" : "") +
+    "<hr>" +
+    '<div class="c"><b>' + (quitada ? "COMPROVANTE DE QUITAÇÃO" : "NOTA DE CONTA (FIADO)") + "</b></div>" +
+    '<div class="c p">Não é documento fiscal</div>' +
+    "<hr>" +
+    "<div>Cliente: <b>" + escapar(d.nome) + "</b></div>" +
+    (d.telefone ? "<div>Tel.: " + escapar(formatarTelefone(d.telefone)) + "</div>" : "") +
+    "<div>Emitida: " + escapar(agora.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })) + "</div>" +
+    "<hr><table>" + linhas + "</table><hr>" +
+    "<table>" +
+      "<tr><td colspan=2>Total de compras</td><td class=v>" + moeda.format(compras) + "</td></tr>" +
+      (pago ? "<tr><td colspan=2>Total pago</td><td class=v>-" + moeda.format(pago) + "</td></tr>" : "") +
+      '<tr class="tot"><td colspan=2>' + (quitada ? "CONTA QUITADA" : "A PAGAR") + "</td><td class=v>" +
+        moeda.format(Math.max(saldo, 0)) + "</td></tr>" +
+    "</table>" +
+    (quitada ? "" : '<div class="ass">Assinatura do cliente</div>') +
+    '<div class="c p" style="margin-top:6mm">Obrigado pela preferência!</div>' +
+    "</body></html>";
+
+  document.querySelector("#quadroNotinha")?.remove();
+  const quadro = document.createElement("iframe");
+  quadro.id = "quadroNotinha";
+  quadro.setAttribute("aria-hidden", "true");
+  quadro.style.cssText = "position:fixed; width:0; height:0; border:0; right:0; bottom:0;";
+  quadro.srcdoc = html;
+  quadro.onload = () => {
+    quadro.contentWindow.focus();
+    quadro.contentWindow.print();
+  };
+  document.body.appendChild(quadro);
+}
+
+$("#btImprimirComanda").addEventListener("click", () => {
+  imprimirNotinha().catch((e) => mostrarErro($("#erroComanda"), e));
+});
+
+function linkExtrato(d, saldo) {
+  const linhas = contaAtual().map((l) =>
     "• " + dataCurta.format(new Date(l.criado_em)) + " — " +
     (l.tipo === "pagamento" ? "pagamento: −" : l.descricao + ": ") + moeda.format(Number(l.valor)));
   const texto = "Olá, " + d.nome.split(" ")[0] + "! Segue sua conta na Drogaria Munhoz:\n\n" +
